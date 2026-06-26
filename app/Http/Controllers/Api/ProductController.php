@@ -16,12 +16,21 @@ class ProductController extends Controller
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->query('category_id'));
         } elseif ($request->filled('category')) {
-            $category = $request->query('category');
-            $query->where(function ($builder) use ($category) {
-                $builder->where('category_id', $category)
-                    ->orWhereHas('category', fn ($categoryQuery) => $categoryQuery->where('slug', $category));
-            });
+            $category = (string) $request->query('category');
+
+            // `category` peut être soit un UUID/id de category, soit un slug.
+            // On tente une détection robuste:
+            // - UUID v4/v1 (général) => on filtre sur category_id
+            // - sinon => on filtre sur category.slug
+            $isUuid = preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/', $category) === 1;
+
+            if ($isUuid) {
+                $query->where('category_id', $category);
+            } else {
+                $query->whereHas('category', fn ($categoryQuery) => $categoryQuery->where('slug', $category));
+            }
         }
+
 
         if ($request->filled('exclude_id')) {
             $query->where('id', '!=', $request->query('exclude_id'));
