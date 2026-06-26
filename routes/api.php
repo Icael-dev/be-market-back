@@ -56,6 +56,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('cart/items', [CartController::class, 'addItem']);
     Route::put('cart/items/{id}', [CartController::class, 'updateItem']);
     Route::delete('cart/items/{id}', [CartController::class, 'removeItem']);
+    Route::delete('cart', [CartController::class, 'clear']);
 
     Route::post('checkout', [OrderController::class, 'checkout']);
     Route::get('orders', [OrderController::class, 'index']);

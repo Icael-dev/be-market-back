@@ -10,14 +10,28 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Passport\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'is_admin'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable(['id', 'name', 'email', 'password', 'is_admin'])]
+#[Hidden(['password', 'remember_token', 'is_admin'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (! $user->id) {
+                $user->id = (string) Str::uuid();
+            }
+        });
+    }
 
     protected function casts(): array
     {
@@ -31,5 +45,30 @@ class User extends Authenticatable
     public function profile()
     {
         return $this->hasOne(Profile::class);
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    public function carts()
+    {
+        return $this->hasMany(Cart::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function wishlist()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function supportTickets()
+    {
+        return $this->hasMany(SupportTicket::class);
     }
 }
