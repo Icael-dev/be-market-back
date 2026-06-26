@@ -24,7 +24,13 @@ class PublicController extends Controller
 
     public function blog(): JsonResponse
     {
-        return response()->json(BlogPost::where('is_published', true)->orderBy('published_at', 'desc')->get());
+        $query = BlogPost::where('is_published', true);
+
+        if (request()->boolean('published')) {
+            $query->where('is_published', true);
+        }
+
+        return response()->json($query->orderBy('published_at', 'desc')->get());
     }
 
     public function blogDetail(string $slug): JsonResponse
@@ -41,6 +47,11 @@ class PublicController extends Controller
         return response()->json(FAQ::where('is_active', true)->orderBy('sort_order')->get());
     }
 
+    public function legalPages(): JsonResponse
+    {
+        return response()->json(LegalPage::all());
+    }
+
     public function legalPage(string $slug): JsonResponse
     {
         $page = LegalPage::where('slug', $slug)->first();
@@ -52,12 +63,16 @@ class PublicController extends Controller
 
     public function flashSales(): JsonResponse
     {
-        $now = now();
-        return response()->json(FlashSale::where('is_active', true)
-            ->where('starts_at', '<=', $now)
-            ->where('ends_at', '>=', $now)
-            ->with('product')
-            ->get());
+        $query = FlashSale::with('product');
+
+        if (request()->boolean('active')) {
+            $now = now();
+            $query->where('is_active', true)
+                ->where('starts_at', '<=', $now)
+                ->where('ends_at', '>=', $now);
+        }
+
+        return response()->json($query->get());
     }
 
     public function newsletter(Request $request): JsonResponse

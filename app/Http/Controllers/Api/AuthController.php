@@ -87,8 +87,17 @@ class AuthController extends Controller
 
     public function user(Request $request): JsonResponse
     {
-        return $this->currentUserResponse($request->user());
+        $user = $request->user();
+
+        // Quand le token est absent/invalid, auth:api doit normalement renvoyer 401,
+        // mais on évite ici tout crash éventuel et on répond proprement.
+        if (! $user) {
+            return response()->json(['user' => null, 'profile' => null], 401);
+        }
+
+        return $this->currentUserResponse($user);
     }
+
 
     public function refresh(Request $request): JsonResponse
     {

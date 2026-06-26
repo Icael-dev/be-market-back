@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\SupportController;
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\LoyaltyController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminBannerController;
@@ -34,14 +36,16 @@ Route::get('categories', [CategoryController::class, 'index']);
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/{slug}', [ProductController::class, 'show']);
 Route::get('banners', [PublicController::class, 'banners']);
-Route::get('blog', [PublicController::class, 'blog']);
-Route::get('blog/{slug}', [PublicController::class, 'blogDetail']);
+Route::get('blog-posts', [PublicController::class, 'blog']);
+Route::get('blog-posts/{slug}', [PublicController::class, 'blogDetail']);
 Route::get('faqs', [PublicController::class, 'faqs']);
+Route::get('legal', [PublicController::class, 'legalPages']);
 Route::get('legal/{slug}', [PublicController::class, 'legalPage']);
 Route::get('flash-sales', [PublicController::class, 'flashSales']);
 Route::get('settings', [SettingsController::class, 'index']);
 Route::post('newsletter', [PublicController::class, 'newsletter']);
 Route::post('stock-notifications', [PublicController::class, 'stockNotifications']);
+Route::get('reviews', [ReviewController::class, 'index']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
@@ -70,6 +74,11 @@ Route::middleware('auth:api')->group(function () {
     Route::get('support/tickets', [SupportController::class, 'index']);
     Route::get('support/tickets/{id}', [SupportController::class, 'show']);
     Route::post('support/tickets/{id}/messages', [SupportController::class, 'storeMessage']);
+
+    Route::post('reviews', [ReviewController::class, 'store']);
+
+    Route::get('loyalty/points', [LoyaltyController::class, 'points']);
+    Route::get('loyalty/transactions', [LoyaltyController::class, 'transactions']);
 });
 
 Route::middleware(['auth:api', 'admin'])->prefix('admin')->group(function () {
@@ -82,6 +91,7 @@ Route::middleware(['auth:api', 'admin'])->prefix('admin')->group(function () {
     Route::get('settings', [AdminSettingController::class, 'index']);
     Route::put('settings', [AdminSettingController::class, 'update']);
     Route::get('orders', [AdminOrderController::class, 'index']);
+    Route::put('orders/{id}', [AdminOrderController::class, 'update']);
     Route::get('customers', [AdminCustomerController::class, 'index']);
     Route::get('statistics', [AdminStatisticsController::class, 'index']);
     Route::get('export', [AdminStatisticsController::class, 'export']);

@@ -98,6 +98,7 @@ return new class extends Migration
             $table->string('payment_status')->default('pending');
             $table->string('payment_method')->nullable();
             $table->decimal('subtotal', 12, 2)->default(0);
+            $table->decimal('discount', 12, 2)->default(0);
             $table->decimal('shipping_fee', 12, 2)->default(0);
             $table->decimal('tax', 12, 2)->default(0);
             $table->decimal('total', 12, 2)->default(0);

@@ -11,22 +11,20 @@ class AdminFlashSaleController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(FlashSale::orderBy('starts_at', 'asc')->get());
+        return response()->json(FlashSale::with('product')->orderBy('starts_at', 'asc')->get());
     }
 
     public function store(Request $request): JsonResponse
     {
         $flashSale = FlashSale::create($request->validate([
-            'title' => 'required|string',
+            'product_id' => 'required|uuid|exists:products,id',
             'starts_at' => 'required|date',
             'ends_at' => 'required|date|after:starts_at',
-            'product_ids' => 'sometimes|array',
-            'product_ids.*' => 'uuid|exists:products,id',
-            'discount_percentage' => 'sometimes|nullable|numeric',
+            'discount_percentage' => 'required|integer|min:1|max:99',
             'is_active' => 'sometimes|boolean',
         ]));
 
-        return response()->json($flashSale, 201);
+        return response()->json($flashSale->load('product'), 201);
     }
 
     public function show(string $id): JsonResponse
@@ -38,16 +36,14 @@ class AdminFlashSaleController extends Controller
     {
         $flashSale = FlashSale::findOrFail($id);
         $flashSale->update($request->validate([
-            'title' => 'sometimes|string',
+            'product_id' => 'sometimes|uuid|exists:products,id',
             'starts_at' => 'sometimes|date',
             'ends_at' => 'sometimes|date|after:starts_at',
-            'product_ids' => 'sometimes|array',
-            'product_ids.*' => 'uuid|exists:products,id',
-            'discount_percentage' => 'sometimes|nullable|numeric',
+            'discount_percentage' => 'sometimes|integer|min:1|max:99',
             'is_active' => 'sometimes|boolean',
         ]));
 
-        return response()->json($flashSale);
+        return response()->json($flashSale->load('product'));
     }
 
     public function destroy(string $id): JsonResponse
