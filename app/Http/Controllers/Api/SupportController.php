@@ -13,9 +13,10 @@ class SupportController extends Controller
 {
     public function storeTicket(Request $request): JsonResponse
     {
-        $data = $request->only(['subject', 'priority']);
+        $data = $request->only(['subject', 'message', 'priority']);
         $validator = Validator::make($data, [
             'subject' => ['required', 'string', 'max:255'],
+            'message' => ['sometimes', 'nullable', 'string'],
             'priority' => ['sometimes', 'in:low,normal,high,urgent'],
         ]);
 
@@ -30,7 +31,16 @@ class SupportController extends Controller
             'status' => 'open',
         ]);
 
-        return response()->json($ticket, 201);
+        if (!empty($data['message'])) {
+            SupportMessage::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'message' => $data['message'],
+                'is_from_admin' => false,
+            ]);
+        }
+
+        return response()->json($ticket->load('messages'), 201);
     }
 
     public function index(Request $request): JsonResponse

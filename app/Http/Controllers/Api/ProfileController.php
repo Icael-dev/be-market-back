@@ -67,7 +67,7 @@ class ProfileController extends Controller
             'city' => ['required', 'string', 'max:255'],
             'region' => ['sometimes', 'nullable', 'string', 'max:255'],
             'country' => ['required', 'string', 'max:255'],
-            'postal_code' => ['required', 'string', 'max:50'],
+            'postal_code' => ['sometimes', 'nullable', 'string', 'max:50'],
             'is_default' => ['sometimes', 'boolean'],
         ]);
 
@@ -102,7 +102,7 @@ class ProfileController extends Controller
             'city' => ['sometimes', 'string', 'max:255'],
             'region' => ['sometimes', 'nullable', 'string', 'max:255'],
             'country' => ['sometimes', 'string', 'max:255'],
-            'postal_code' => ['sometimes', 'string', 'max:50'],
+            'postal_code' => ['sometimes', 'nullable', 'string', 'max:50'],
             'is_default' => ['sometimes', 'boolean'],
         ]);
 

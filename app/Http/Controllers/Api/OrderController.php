@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -15,7 +16,7 @@ class OrderController extends Controller
 {
     public function checkout(Request $request): JsonResponse
     {
-        $data = $request->only(['shipping_address', 'billing_address', 'payment_method', 'notes']);
+        $data = $request->only(['shipping_address', 'billing_address', 'payment_method', 'notes', 'coupon_code']);
 
         $validator = Validator::make($data, [
             'shipping_address' => ['required', 'array'],
@@ -26,6 +27,7 @@ class OrderController extends Controller
             'shipping_address.country' => ['required', 'string'],
             'payment_method' => ['sometimes', 'nullable', 'string'],
             'billing_address' => ['sometimes', 'nullable', 'array'],
+            'coupon_code' => ['sometimes', 'nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
@@ -50,9 +52,45 @@ class OrderController extends Controller
             $subtotal += $item->product->price * $item->quantity;
         }
 
+        $discount = 0;
+        if (!empty($data['coupon_code'])) {
+            $coupon = Coupon::where('code', $data['coupon_code'])
+                ->where('is_active', true)
+                ->first();
+
+            if (!$coupon) {
+                return response()->json(['message' => 'Invalid coupon code.'], 400);
+            }
+
+            $now = now();
+            if ($coupon->starts_at && $coupon->starts_at > $now) {
+                return response()->json(['message' => 'Coupon is not yet active.'], 400);
+            }
+
+            if ($coupon->expires_at && $coupon->expires_at < $now) {
+                return response()->json(['message' => 'Coupon has expired.'], 400);
+            }
+
+            if ($coupon->max_uses && $coupon->uses_count >= $coupon->max_uses) {
+                return response()->json(['message' => 'Coupon has reached maximum uses.'], 400);
+            }
+
+            if ($subtotal < $coupon->min_order_amount) {
+                return response()->json(['message' => "Minimum order amount for this coupon is {$coupon->min_order_amount}."], 400);
+            }
+
+            if ($coupon->discount_type === 'percentage') {
+                $discount = round($subtotal * ($coupon->discount_value / 100), 2);
+            } else {
+                $discount = $coupon->discount_value;
+            }
+
+            $coupon->increment('uses_count');
+        }
+
         $shippingFee = 0;
-        $tax = round($subtotal * 0.1, 2);
-        $total = round($subtotal + $shippingFee + $tax, 2);
+        $tax = round(($subtotal - $discount) * 0.1, 2);
+        $total = round($subtotal - $discount + $shippingFee + $tax, 2);
 
         $order = Order::create([
             'order_number' => 'ORD-' . strtoupper(uniqid()),
@@ -61,6 +99,7 @@ class OrderController extends Controller
             'payment_status' => 'pending',
             'payment_method' => $data['payment_method'] ?? 'card',
             'subtotal' => $subtotal,
+            'discount' => $discount,
             'shipping_fee' => $shippingFee,
             'tax' => $tax,
             'total' => $total,
@@ -90,8 +129,13 @@ class OrderController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $orders = Order::where('user_id', $request->user()->id)->with('items')->orderBy('created_at', 'desc')->get();
-        return response()->json($orders);
+        $query = Order::where('user_id', $request->user()->id)->with('items')->orderBy('created_at', 'desc');
+
+        if ($request->filled('limit')) {
+            return response()->json($query->limit((int) $request->query('limit'))->get());
+        }
+
+        return response()->json($query->get());
     }
 
     public function show(Request $request, string $id): JsonResponse
