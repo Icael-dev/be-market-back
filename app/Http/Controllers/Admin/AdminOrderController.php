@@ -17,6 +17,19 @@ class AdminOrderController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        return response()->json($query->paginate(20));
+        return response()->json($query->get());
+    }
+
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $order = Order::with('user', 'items.product')->findOrFail($id);
+        $data = $request->validate([
+            'status' => 'sometimes|in:pending,confirmed,processing,shipped,delivered,cancelled',
+            'payment_status' => 'sometimes|in:pending,processing,paid,failed,refunded',
+        ]);
+
+        $order->update($data);
+
+        return response()->json($order->refresh()->load('user', 'items.product'));
     }
 }

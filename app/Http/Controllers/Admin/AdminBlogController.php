@@ -21,7 +21,7 @@ class AdminBlogController extends Controller
             'slug' => 'required|string|unique:blog_posts,slug',
             'excerpt' => 'sometimes|nullable|string',
             'content' => 'required|string',
-            'image' => 'sometimes|nullable|string',
+            'image_url' => 'sometimes|nullable|string',
             'published_at' => 'sometimes|nullable|date',
             'is_published' => 'sometimes|boolean',
         ]));
@@ -42,7 +42,7 @@ class AdminBlogController extends Controller
             'slug' => 'sometimes|string|unique:blog_posts,slug,' . $id,
             'excerpt' => 'sometimes|nullable|string',
             'content' => 'sometimes|string',
-            'image' => 'sometimes|nullable|string',
+            'image_url' => 'sometimes|nullable|string',
             'published_at' => 'sometimes|nullable|date',
             'is_published' => 'sometimes|boolean',
         ]));

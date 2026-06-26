@@ -11,7 +11,7 @@ class AdminBannerController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Banner::orderBy('display_order')->get());
+        return response()->json(Banner::orderBy('sort_order')->get());
     }
 
     public function store(Request $request): JsonResponse
@@ -19,9 +19,11 @@ class AdminBannerController extends Controller
         $banner = Banner::create($request->validate([
             'title' => 'required|string',
             'subtitle' => 'sometimes|nullable|string',
-            'image' => 'required|string',
-            'link' => 'sometimes|nullable|string',
-            'display_order' => 'sometimes|integer',
+            'image_url' => 'required|string',
+            'link_url' => 'sometimes|nullable|string',
+            'button_text' => 'sometimes|nullable|string',
+            'position' => 'sometimes|string',
+            'sort_order' => 'sometimes|integer',
             'is_active' => 'sometimes|boolean',
         ]));
 
@@ -39,9 +41,11 @@ class AdminBannerController extends Controller
         $banner->update($request->validate([
             'title' => 'sometimes|string',
             'subtitle' => 'sometimes|nullable|string',
-            'image' => 'sometimes|string',
-            'link' => 'sometimes|nullable|string',
-            'display_order' => 'sometimes|integer',
+            'image_url' => 'sometimes|string',
+            'link_url' => 'sometimes|nullable|string',
+            'button_text' => 'sometimes|nullable|string',
+            'position' => 'sometimes|string',
+            'sort_order' => 'sometimes|integer',
             'is_active' => 'sometimes|boolean',
         ]));
 

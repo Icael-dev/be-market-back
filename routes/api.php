@@ -91,6 +91,7 @@ Route::middleware(['auth:api', 'admin'])->prefix('admin')->group(function () {
     Route::get('settings', [AdminSettingController::class, 'index']);
     Route::put('settings', [AdminSettingController::class, 'update']);
     Route::get('orders', [AdminOrderController::class, 'index']);
+    Route::put('orders/{id}', [AdminOrderController::class, 'update']);
     Route::get('customers', [AdminCustomerController::class, 'index']);
     Route::get('statistics', [AdminStatisticsController::class, 'index']);
     Route::get('export', [AdminStatisticsController::class, 'export']);

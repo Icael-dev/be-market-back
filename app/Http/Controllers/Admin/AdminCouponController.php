@@ -18,12 +18,12 @@ class AdminCouponController extends Controller
     {
         $coupon = Coupon::create($request->validate([
             'code' => 'required|string|unique:coupons,code',
-            'type' => 'required|string',
-            'value' => 'required|numeric',
-            'minimum_amount' => 'sometimes|nullable|numeric',
-            'starts_at' => 'required|date',
-            'expires_at' => 'required|date|after:starts_at',
-            'usage_limit' => 'sometimes|nullable|integer',
+            'discount_type' => 'required|in:percentage,fixed',
+            'discount_value' => 'required|numeric',
+            'min_order_amount' => 'sometimes|nullable|numeric',
+            'max_uses' => 'sometimes|nullable|integer',
+            'starts_at' => 'sometimes|nullable|date',
+            'expires_at' => 'sometimes|nullable|date|after:starts_at',
             'is_active' => 'sometimes|boolean',
         ]));
 
@@ -40,12 +40,12 @@ class AdminCouponController extends Controller
         $coupon = Coupon::findOrFail($id);
         $coupon->update($request->validate([
             'code' => 'sometimes|string|unique:coupons,code,' . $id,
-            'type' => 'sometimes|string',
-            'value' => 'sometimes|numeric',
-            'minimum_amount' => 'sometimes|nullable|numeric',
-            'starts_at' => 'sometimes|date',
-            'expires_at' => 'sometimes|date|after:starts_at',
-            'usage_limit' => 'sometimes|nullable|integer',
+            'discount_type' => 'sometimes|in:percentage,fixed',
+            'discount_value' => 'sometimes|numeric',
+            'min_order_amount' => 'sometimes|nullable|numeric',
+            'max_uses' => 'sometimes|nullable|integer',
+            'starts_at' => 'sometimes|nullable|date',
+            'expires_at' => 'sometimes|nullable|date|after:starts_at',
             'is_active' => 'sometimes|boolean',
         ]));
 
