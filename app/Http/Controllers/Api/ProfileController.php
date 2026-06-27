@@ -32,6 +32,9 @@ class ProfileController extends Controller
         }
 
         $user = $request->user();
+        if (isset($data['full_name'])) {
+            $user->name = $data['full_name'];
+        }
         if (isset($data['name'])) {
             $user->name = $data['name'];
         }
