@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\LoyaltyController;
+use App\Http\Controllers\Api\TestimonialController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminBannerController;
@@ -46,6 +47,7 @@ Route::get('settings', [SettingsController::class, 'index']);
 Route::post('newsletter', [PublicController::class, 'newsletter']);
 Route::post('stock-notifications', [PublicController::class, 'stockNotifications']);
 Route::get('reviews', [ReviewController::class, 'index']);
+Route::get('testimonials', [TestimonialController::class, 'index']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);

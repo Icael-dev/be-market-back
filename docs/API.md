@@ -174,8 +174,8 @@ Authentification : Bearer JWT (Laravel Passport) via header `Authorization: Bear
   "free_shipping_threshold": 50000,
   "tax_rate": 0.1,
   "currency": "FCFA",
-  "store_name": "Electronica",
-  "store_email": "contact@electronica.tg",
+  "store_name": "BE-Market",
+  "store_email": "contact@be-market.tg",
   "store_phone": ""
 }
 ```
@@ -260,8 +260,8 @@ Toutes les routes admin requièrent `auth:api` **et** `admin` (`profile.is_admin
 **Body (partiel) :**
 ```json
 {
-  "store_name": "Electronica",
-  "store_email": "contact@electronica.tg",
+  "store_name": "BE-Market",
+  "store_email": "contact@be-market.tg",
   "store_phone": "+228 90 00 00 00",
   "currency": "FCFA",
   "tax_rate": 0.1,
