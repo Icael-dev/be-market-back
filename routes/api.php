@@ -35,6 +35,7 @@ Route::prefix('auth')->group(function () {
 
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('products', [ProductController::class, 'index']);
+Route::get('products/price-bounds', [ProductController::class, 'priceBounds']);
 Route::get('products/{slug}', [ProductController::class, 'show']);
 Route::get('banners', [PublicController::class, 'banners']);
 Route::get('blog-posts', [PublicController::class, 'blog']);

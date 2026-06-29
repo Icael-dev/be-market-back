@@ -18,10 +18,6 @@ class ProductController extends Controller
         } elseif ($request->filled('category')) {
             $category = (string) $request->query('category');
 
-            // `category` peut être soit un UUID/id de category, soit un slug.
-            // On tente une détection robuste:
-            // - UUID v4/v1 (général) => on filtre sur category_id
-            // - sinon => on filtre sur category.slug
             $isUuid = preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/', $category) === 1;
 
             if ($isUuid) {
@@ -30,7 +26,6 @@ class ProductController extends Controller
                 $query->whereHas('category', fn ($categoryQuery) => $categoryQuery->where('slug', $category));
             }
         }
-
 
         if ($request->filled('exclude_id')) {
             $query->where('id', '!=', $request->query('exclude_id'));
@@ -79,6 +74,43 @@ class ProductController extends Controller
         }
 
         return response()->json($query->get());
+    }
+
+    public function priceBounds(Request $request): JsonResponse
+    {
+        $query = Product::where('is_active', true);
+
+        if ($request->filled('category')) {
+            $category = (string) $request->query('category');
+            $isUuid = preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/', $category) === 1;
+
+            if ($isUuid) {
+                $query->where('category_id', $category);
+            } else {
+                $query->whereHas('category', fn ($q) => $q->where('slug', $category));
+            }
+        }
+
+        if ($request->filled('search')) {
+            $term = '%'.$request->query('search').'%';
+            $query->where(fn ($builder) => $builder
+                ->where('name', 'ilike', $term)
+                ->orWhere('description', 'ilike', $term));
+        }
+
+        if ($request->filled('brand')) {
+            $query->whereRaw("specs->>'brand' = ?", [$request->query('brand')]);
+        }
+
+        $minMax = $query->selectRaw('MIN(price) as min_price, MAX(price) as max_price')->first();
+
+        $min = $minMax->min_price !== null ? (float) $minMax->min_price : 0;
+        $max = $minMax->max_price !== null ? (float) $minMax->max_price : 0;
+
+        return response()->json([
+            'min' => $min,
+            'max' => $max,
+        ]);
     }
 
     public function show(string $slug): JsonResponse
