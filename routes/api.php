@@ -86,6 +86,7 @@ Route::middleware('auth:api')->group(function () {
 
 Route::middleware(['auth:api', 'admin'])->prefix('admin')->group(function () {
     Route::apiResource('products', AdminProductController::class);
+    Route::post('products/upload-image', [AdminProductController::class, 'uploadImage']);
     Route::apiResource('categories', AdminCategoryController::class);
     Route::apiResource('banners', AdminBannerController::class);
     Route::apiResource('blog-posts', AdminBlogController::class);
