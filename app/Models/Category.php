@@ -21,11 +21,13 @@ class Category extends Model
         'image_url',
         'sort_order',
         'is_active',
+        'default_specs',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'sort_order' => 'integer',
+        'default_specs' => 'array',
     ];
 
     protected static function booted(): void

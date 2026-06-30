@@ -21,6 +21,9 @@ class AdminCategoryController extends Controller
             'slug' => 'required|string|unique:categories,slug',
             'description' => 'sometimes|nullable|string',
             'is_active' => 'sometimes|boolean',
+            'default_specs' => 'sometimes|nullable|array',
+            'default_specs.*.key' => 'required_with:default_specs|string',
+            'default_specs.*.placeholder' => 'sometimes|nullable|string',
         ]));
 
         return response()->json($category, 201);
@@ -39,6 +42,9 @@ class AdminCategoryController extends Controller
             'slug' => 'sometimes|string|unique:categories,slug,' . $id,
             'description' => 'sometimes|nullable|string',
             'is_active' => 'sometimes|boolean',
+            'default_specs' => 'sometimes|nullable|array',
+            'default_specs.*.key' => 'required_with:default_specs|string',
+            'default_specs.*.placeholder' => 'sometimes|nullable|string',
         ]));
 
         return response()->json($category);
