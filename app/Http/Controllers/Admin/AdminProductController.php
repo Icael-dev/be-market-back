@@ -62,6 +62,10 @@ class AdminProductController extends Controller
             $data['slug'] = Str::slug($data['slug']);
         }
 
+        if (empty($data['sku'])) {
+            $data['sku'] = 'PROD-' . Str::random(8);
+        }
+
         $data['is_featured'] = $data['is_featured'] ?? false;
         $data['is_active'] = $data['is_active'] ?? true;
 
@@ -126,6 +130,10 @@ class AdminProductController extends Controller
             $data['sku'] = null;
         }
 
+        if (empty($data['sku']) && !$product->sku) {
+            $data['sku'] = 'PROD-' . Str::random(8);
+        }
+
         if (isset($data['compare_price']) && $data['compare_price'] === '') {
             $data['compare_price'] = null;
         }
@@ -148,7 +156,7 @@ class AdminProductController extends Controller
     public function uploadImage(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'image' => ['required', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
+            'image' => ['required', 'image', 'mimes:jpeg,png,webp', 'max:10240'],
         ]);
 
         if ($validator->fails()) {
@@ -157,8 +165,10 @@ class AdminProductController extends Controller
 
         $path = $request->file('image')->store('products', 'public');
 
+        $filename = basename($path);
+
         return response()->json([
-            'url' => Storage::disk('public')->url($path),
+            'url' => url("/api/images/{$filename}"),
         ], 201);
     }
 }

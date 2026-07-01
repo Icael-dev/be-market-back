@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ImageController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
@@ -25,6 +26,10 @@ use App\Http\Controllers\Admin\AdminCustomerController;
 use App\Http\Controllers\Admin\AdminStatisticsController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('login', function () {
+    return response()->json(['message' => 'Unauthenticated.'], 401);
+});
+
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
@@ -32,6 +37,8 @@ Route::prefix('auth')->group(function () {
     Route::get('user', [AuthController::class, 'user'])->middleware('auth:api');
     Route::post('refresh', [AuthController::class, 'refresh'])->middleware('auth:api');
 });
+
+Route::get('images/{path}', [ImageController::class, 'show'])->where('path', '.*');
 
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('products', [ProductController::class, 'index']);
