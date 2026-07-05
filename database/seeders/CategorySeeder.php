@@ -94,17 +94,25 @@ class CategorySeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            Category::updateOrCreate(
-                ['name' => $category['name']],
-                [
+            $slug = Str::slug($category['name']);
+            $existing = Category::where('slug', $slug)->first();
+            
+            if ($existing) {
+                $existing->update([
+                    'description' => $category['description'],
+                    'sort_order' => $category['sort_order'],
+                ]);
+            } else {
+                Category::create([
                     'id' => (string) Str::uuid(),
-                    'slug' => Str::slug($category['name']),
+                    'name' => $category['name'],
+                    'slug' => $slug,
                     'description' => $category['description'],
                     'image_url' => null,
                     'sort_order' => $category['sort_order'],
                     'is_active' => true,
-                ]
-            );
+                ]);
+            }
         }
     }
 }

@@ -11,43 +11,68 @@ class AdminCategoryController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Category::orderBy('name')->get());
+        return response()->json(Category::with('specs')->orderBy('name')->get());
     }
 
     public function store(Request $request): JsonResponse
     {
-        $category = Category::create($request->validate([
+        $validated = $request->validate([
             'name' => 'required|string',
             'slug' => 'required|string|unique:categories,slug',
             'description' => 'sometimes|nullable|string',
             'is_active' => 'sometimes|boolean',
-            'default_specs' => 'sometimes|nullable|array',
-            'default_specs.*.key' => 'required_with:default_specs|string',
-            'default_specs.*.placeholder' => 'sometimes|nullable|string',
-        ]));
+            'specs' => 'sometimes|nullable|array',
+            'specs.*.key' => 'required_with:specs|string',
+            'specs.*.placeholder' => 'sometimes|nullable|string',
+        ]);
 
-        return response()->json($category, 201);
+        $category = Category::create(collect($validated)->except('specs')->toArray());
+
+        if (isset($validated['specs'])) {
+            foreach ($validated['specs'] as $spec) {
+                $category->specs()->create([
+                    'key' => $spec['key'],
+                    'placeholder' => $spec['placeholder'] ?? null,
+                ]);
+            }
+        }
+
+        return response()->json($category->load('specs'), 201);
     }
 
     public function show(string $id): JsonResponse
     {
-        return response()->json(Category::findOrFail($id));
+        return response()->json(Category::with('specs')->findOrFail($id));
     }
 
     public function update(Request $request, string $id): JsonResponse
     {
-        $category = Category::findOrFail($id);
-        $category->update($request->validate([
+        $validated = $request->validate([
             'name' => 'sometimes|string',
             'slug' => 'sometimes|string|unique:categories,slug,' . $id,
             'description' => 'sometimes|nullable|string',
             'is_active' => 'sometimes|boolean',
-            'default_specs' => 'sometimes|nullable|array',
-            'default_specs.*.key' => 'required_with:default_specs|string',
-            'default_specs.*.placeholder' => 'sometimes|nullable|string',
-        ]));
+            'specs' => 'sometimes|nullable|array',
+            'specs.*.key' => 'required_with:specs|string',
+            'specs.*.placeholder' => 'sometimes|nullable|string',
+        ]);
 
-        return response()->json($category);
+        $category = Category::findOrFail($id);
+        $category->update(collect($validated)->except('specs')->toArray());
+
+        if (array_key_exists('specs', $validated)) {
+            $category->specs()->delete();
+            if (isset($validated['specs'])) {
+                foreach ($validated['specs'] as $spec) {
+                    $category->specs()->create([
+                        'key' => $spec['key'],
+                        'placeholder' => $spec['placeholder'] ?? null,
+                    ]);
+                }
+            }
+        }
+
+        return response()->json($category->load('specs'));
     }
 
     public function destroy(string $id): JsonResponse
