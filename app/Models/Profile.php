@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-#[Fillable(['id', 'user_id', 'email', 'full_name', 'phone', 'avatar_url', 'is_admin'])]
+#[Fillable(['id', 'user_id', 'email', 'full_name', 'phone', 'avatar_url'])]
 class Profile extends Model
 {
     use HasFactory;

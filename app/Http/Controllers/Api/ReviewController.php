@@ -13,7 +13,7 @@ class ReviewController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Review::with('profile');
+        $query = Review::with('user.profile');
 
         if ($request->filled('product_id')) {
             $query->where('product_id', $request->query('product_id'));
@@ -51,6 +51,6 @@ class ReviewController extends Controller
             'is_verified_purchase' => false,
         ]);
 
-        return response()->json($review->load('profile'), 201);
+        return response()->json($review->load('user.profile'), 201);
     }
 }

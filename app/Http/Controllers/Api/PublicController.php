@@ -26,7 +26,7 @@ class PublicController extends Controller
     {
         $query = BlogPost::where('is_published', true);
 
-        if (request()->boolean('published')) {
+        if ($request->query('published')) {
             $query->where('is_published', true);
         }
 
@@ -65,7 +65,7 @@ class PublicController extends Controller
     {
         $query = FlashSale::with('product');
 
-        if (request()->boolean('active')) {
+        if ($request->boolean('active')) {
             $now = now();
             $query->where('is_active', true)
                 ->where('starts_at', '<=', $now)

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\LoyaltyController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\TestimonialController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCategoryController;
@@ -44,6 +45,7 @@ Route::get('categories', [CategoryController::class, 'index']);
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/price-bounds', [ProductController::class, 'priceBounds']);
 Route::get('products/{slug}', [ProductController::class, 'show']);
+Route::get('products/suggestions', [AdminProductController::class, 'suggestions']);
 Route::get('banners', [PublicController::class, 'banners']);
 Route::get('blog-posts', [PublicController::class, 'blog']);
 Route::get('blog-posts/{slug}', [PublicController::class, 'blogDetail']);
@@ -56,6 +58,13 @@ Route::post('newsletter', [PublicController::class, 'newsletter']);
 Route::post('stock-notifications', [PublicController::class, 'stockNotifications']);
 Route::get('reviews', [ReviewController::class, 'index']);
 Route::get('testimonials', [TestimonialController::class, 'index']);
+
+Route::middleware('auth:api')->group(function () {
+    Route::get('payment/history', [PaymentController::class, 'index']);
+    Route::post('payment/initiate', [PaymentController::class, 'store']);
+    Route::get('payment/verify/{id}', [PaymentController::class, 'verify']);
+    Route::post('payment/callback', [PaymentController::class, 'callback']);
+});
 
 Route::middleware('auth:api')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);

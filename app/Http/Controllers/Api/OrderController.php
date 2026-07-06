@@ -25,8 +25,9 @@ class OrderController extends Controller
             'shipping_address.address_line1' => ['required', 'string'],
             'shipping_address.city' => ['required', 'string'],
             'shipping_address.country' => ['required', 'string'],
-            'payment_method' => ['sometimes', 'nullable', 'string'],
             'billing_address' => ['sometimes', 'nullable', 'array'],
+            'payment_method' => ['sometimes', 'nullable', 'string', 'in:tmoney,flooz,cash_on_delivery'],
+            'notes' => ['sometimes', 'nullable', 'string'],
             'coupon_code' => ['sometimes', 'nullable', 'string'],
         ]);
 

@@ -46,9 +46,4 @@ class Review extends Model
     {
         return $this->belongsTo(User::class);
     }
-
-    public function profile()
-    {
-        return $this->hasOneThrough(Profile::class, User::class, 'id', 'user_id');
-    }
 }

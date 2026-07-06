@@ -156,7 +156,7 @@ class AdminProductController extends Controller
     public function uploadImage(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'image' => ['required', 'image', 'mimes:jpeg,png,webp', 'max:10240'],
+            'image' => ['required', 'image', 'max:2048'],
         ]);
 
         if ($validator->fails()) {
@@ -165,10 +165,25 @@ class AdminProductController extends Controller
 
         $path = $request->file('image')->store('products', 'public');
 
-        $filename = basename($path);
-
         return response()->json([
-            'url' => url("/api/images/{$filename}"),
+            'url' => Storage::url($path),
         ], 201);
+    }
+
+    public function suggestions(Request $request): JsonResponse
+    {
+        $query = $request->query('q', '');
+        $limit = min($request->query('limit', 10), 20);
+
+        $products = Product::query()
+            ->select(['id', 'name', 'slug', 'sku', 'price', 'images'])
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'ILIKE', "%{$query}%")
+                  ->orWhere('sku', 'ILIKE', "%{$query}%");
+            })
+            ->limit($limit)
+            ->get();
+
+        return response()->json($products);
     }
 }
