@@ -45,13 +45,13 @@ class SupportController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $tickets = SupportTicket::where('user_id', $request->user()->id)->with('messages')->get();
+        $tickets = SupportTicket::where('user_id', $request->user()->id)->with('messages.user.profile')->get();
         return response()->json($tickets);
     }
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $ticket = SupportTicket::where('user_id', $request->user()->id)->with('messages')->find($id);
+        $ticket = SupportTicket::where('user_id', $request->user()->id)->with('messages.user.profile')->find($id);
         if (!$ticket) {
             return response()->json(['message' => 'Ticket not found.'], 404);
         }

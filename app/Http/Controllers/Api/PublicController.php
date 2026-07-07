@@ -22,7 +22,7 @@ class PublicController extends Controller
         return response()->json(Banner::where('is_active', true)->orderBy('sort_order')->get());
     }
 
-    public function blog(): JsonResponse
+    public function blog(Request $request): JsonResponse
     {
         $query = BlogPost::where('is_published', true);
 
@@ -61,7 +61,7 @@ class PublicController extends Controller
         return response()->json($page);
     }
 
-    public function flashSales(): JsonResponse
+    public function flashSales(Request $request): JsonResponse
     {
         $query = FlashSale::with('product');
 
