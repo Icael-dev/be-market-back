@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 use Laravel\Passport\HasApiTokens;
 
 #[Fillable(['id', 'name', 'email', 'password', 'is_admin'])]
-#[Hidden(['password', 'remember_token', 'is_admin'])]
+#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */

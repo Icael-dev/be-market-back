@@ -63,7 +63,7 @@ return new class extends Migration
             $table->string('city');
             $table->string('region')->nullable();
             $table->string('country');
-            $table->string('postal_code');
+            $table->string('postal_code')->nullable();
             $table->boolean('is_default')->default(false);
             $table->timestamps();
 

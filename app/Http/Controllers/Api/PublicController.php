@@ -22,11 +22,11 @@ class PublicController extends Controller
         return response()->json(Banner::where('is_active', true)->orderBy('sort_order')->get());
     }
 
-    public function blog(): JsonResponse
+    public function blog(Request $request): JsonResponse
     {
         $query = BlogPost::where('is_published', true);
 
-        if (request()->boolean('published')) {
+        if ($request->query('published')) {
             $query->where('is_published', true);
         }
 
@@ -61,11 +61,11 @@ class PublicController extends Controller
         return response()->json($page);
     }
 
-    public function flashSales(): JsonResponse
+    public function flashSales(Request $request): JsonResponse
     {
         $query = FlashSale::with('product');
 
-        if (request()->boolean('active')) {
+        if ($request->boolean('active')) {
             $now = now();
             $query->where('is_active', true)
                 ->where('starts_at', '<=', $now)

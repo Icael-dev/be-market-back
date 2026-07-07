@@ -32,6 +32,9 @@ class ProfileController extends Controller
         }
 
         $user = $request->user();
+        if (isset($data['full_name'])) {
+            $user->name = $data['full_name'];
+        }
         if (isset($data['name'])) {
             $user->name = $data['name'];
         }
@@ -42,8 +45,19 @@ class ProfileController extends Controller
 
         $profile = $user->profile;
         if ($profile) {
-            $profile->fill($data);
-            $profile->save();
+            $profile->update([
+                'email' => $data['email'] ?? $profile->email,
+                'full_name' => $data['full_name'] ?? $profile->full_name,
+                'phone' => $data['phone'] ?? $profile->phone,
+                'avatar_url' => $data['avatar_url'] ?? $profile->avatar_url,
+            ]);
+        } else {
+            $user->profile()->create([
+                'email' => $data['email'] ?? $user->email,
+                'full_name' => $data['full_name'],
+                'phone' => $data['phone'],
+                'avatar_url' => $data['avatar_url'],
+            ]);
         }
 
         return response()->json($user->load('profile'));

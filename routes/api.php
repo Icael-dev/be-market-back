@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ImageController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
@@ -12,6 +13,8 @@ use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\LoyaltyController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\TestimonialController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminBannerController;
@@ -24,6 +27,10 @@ use App\Http\Controllers\Admin\AdminCustomerController;
 use App\Http\Controllers\Admin\AdminStatisticsController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('login', function () {
+    return response()->json(['message' => 'Unauthenticated.'], 401);
+});
+
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
@@ -32,9 +39,13 @@ Route::prefix('auth')->group(function () {
     Route::post('refresh', [AuthController::class, 'refresh'])->middleware('auth:api');
 });
 
+Route::get('images/{path}', [ImageController::class, 'show'])->where('path', '.*');
+
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('products', [ProductController::class, 'index']);
+Route::get('products/price-bounds', [ProductController::class, 'priceBounds']);
 Route::get('products/{slug}', [ProductController::class, 'show']);
+Route::get('products/suggestions', [AdminProductController::class, 'suggestions']);
 Route::get('banners', [PublicController::class, 'banners']);
 Route::get('blog-posts', [PublicController::class, 'blog']);
 Route::get('blog-posts/{slug}', [PublicController::class, 'blogDetail']);
@@ -46,6 +57,14 @@ Route::get('settings', [SettingsController::class, 'index']);
 Route::post('newsletter', [PublicController::class, 'newsletter']);
 Route::post('stock-notifications', [PublicController::class, 'stockNotifications']);
 Route::get('reviews', [ReviewController::class, 'index']);
+Route::get('testimonials', [TestimonialController::class, 'index']);
+
+Route::middleware('auth:api')->group(function () {
+    Route::get('payment/history', [PaymentController::class, 'index']);
+    Route::post('payment/initiate', [PaymentController::class, 'store']);
+    Route::get('payment/verify/{id}', [PaymentController::class, 'verify']);
+    Route::post('payment/callback', [PaymentController::class, 'callback']);
+});
 
 Route::middleware('auth:api')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
@@ -83,6 +102,7 @@ Route::middleware('auth:api')->group(function () {
 
 Route::middleware(['auth:api', 'admin'])->prefix('admin')->group(function () {
     Route::apiResource('products', AdminProductController::class);
+    Route::post('products/upload-image', [AdminProductController::class, 'uploadImage']);
     Route::apiResource('categories', AdminCategoryController::class);
     Route::apiResource('banners', AdminBannerController::class);
     Route::apiResource('blog-posts', AdminBlogController::class);

@@ -20,11 +20,19 @@ class Product extends Model
         'name',
         'slug',
         'description',
+        'short_description',
         'price',
         'compare_price',
+        'cost_price',
         'stock',
+        'min_stock_alert',
         'images',
         'specs',
+        'dimensions',
+        'variants',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
         'is_featured',
         'is_active',
         'weight',
@@ -33,9 +41,13 @@ class Product extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'compare_price' => 'decimal:2',
+        'cost_price' => 'decimal:2',
         'stock' => 'integer',
+        'min_stock_alert' => 'integer',
         'images' => 'array',
         'specs' => 'array',
+        'dimensions' => 'array',
+        'variants' => 'array',
         'is_featured' => 'boolean',
         'is_active' => 'boolean',
         'weight' => 'decimal:2',
@@ -53,5 +65,10 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
     }
 }

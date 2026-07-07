@@ -11,8 +11,8 @@ class StoreSettings
         'free_shipping_threshold' => 50000,
         'tax_rate' => 0.1,
         'currency' => 'FCFA',
-        'store_name' => 'Electronica',
-        'store_email' => 'contact@electronica.tg',
+        'store_name' => 'BE-Market',
+        'store_email' => 'contact@be-market.tg',
         'store_phone' => '',
     ];
 
