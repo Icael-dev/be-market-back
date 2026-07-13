@@ -58,12 +58,12 @@ Route::post('newsletter', [PublicController::class, 'newsletter']);
 Route::post('stock-notifications', [PublicController::class, 'stockNotifications']);
 Route::get('reviews', [ReviewController::class, 'index']);
 Route::get('testimonials', [TestimonialController::class, 'index']);
+Route::post('payment/callback', [PaymentController::class, 'callback']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('payment/history', [PaymentController::class, 'index']);
     Route::post('payment/initiate', [PaymentController::class, 'store']);
     Route::get('payment/verify/{id}', [PaymentController::class, 'verify']);
-    Route::post('payment/callback', [PaymentController::class, 'callback']);
 });
 
 Route::middleware('auth:api')->group(function () {

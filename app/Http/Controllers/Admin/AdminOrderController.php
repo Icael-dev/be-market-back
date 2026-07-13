@@ -20,6 +20,15 @@ class AdminOrderController extends Controller
         return response()->json($query->get());
     }
 
+    public function show(Request $request, string $id): JsonResponse
+    {
+        $order = Order::with('user', 'items.product')->find($id);
+        if (!$order) {
+            return response()->json(['message' => 'Order not found.'], 404);
+        }
+        return response()->json($order);
+    }
+
     public function update(Request $request, string $id): JsonResponse
     {
         $order = Order::with('user', 'items.product')->findOrFail($id);

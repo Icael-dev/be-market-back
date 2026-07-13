@@ -13,12 +13,12 @@ class PaymentController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $order = Order::where('user_id', $request->user()->id)
-            ->where('payment_status', 'paid')
-            ->with('items')
+        $payments = Payment::whereHas('order', fn ($q) => $q->where('user_id', $request->user()->id))
+            ->with('order.items')
+            ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json($order);
+        return response()->json($payments);
     }
 
     public function store(Request $request): JsonResponse

@@ -37,6 +37,12 @@ class Payment extends Model
             if (!$payment->id) {
                 $payment->id = (string) Str::uuid();
             }
+            if (!$payment->reference) {
+                $payment->reference = 'PAY-' . strtoupper(Str::random(12));
+            }
+            if (!$payment->status) {
+                $payment->status = 'pending';
+            }
         });
     }
 
