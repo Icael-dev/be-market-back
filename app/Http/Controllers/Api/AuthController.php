@@ -96,7 +96,6 @@ class AuthController extends Controller
         return $this->currentUserResponse($user);
     }
 
-
     public function refresh(Request $request): JsonResponse
     {
         $user = $request->user();

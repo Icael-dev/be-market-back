@@ -11,6 +11,7 @@ class Banner extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -33,7 +34,7 @@ class Banner extends Model
     protected static function booted(): void
     {
         static::creating(function (Banner $banner) {
-            if (!$banner->id) {
+            if (! $banner->id) {
                 $banner->id = (string) Str::uuid();
             }
         });

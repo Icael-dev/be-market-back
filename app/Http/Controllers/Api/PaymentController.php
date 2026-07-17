@@ -13,12 +13,12 @@ class PaymentController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $order = Order::where('user_id', $request->user()->id)
-            ->where('payment_status', 'paid')
-            ->with('items')
+        $payments = Payment::whereHas('order', fn ($q) => $q->where('user_id', $request->user()->id))
+            ->with('order')
+            ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json($order);
+        return response()->json($payments);
     }
 
     public function store(Request $request): JsonResponse
@@ -39,7 +39,7 @@ class PaymentController extends Controller
             ->where('id', $data['order_id'])
             ->first();
 
-        if (!$order) {
+        if (! $order) {
             return response()->json(['message' => 'Order not found.'], 404);
         }
 
@@ -47,14 +47,23 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Order already paid.'], 400);
         }
 
+        $isSandbox = env('PAYMENT_SANDBOX', true);
+
         $payment = Payment::create([
             'order_id' => $order->id,
             'payment_method' => $data['payment_method'],
             'amount' => $order->total,
             'phone_number' => $data['phone_number'],
+            'reference' => 'PAY-'.strtoupper(uniqid()),
+            'status' => $isSandbox ? 'paid' : 'pending',
+            'paid_at' => $isSandbox ? now() : null,
         ]);
 
-        return response()->json($payment, 201);
+        if ($isSandbox) {
+            $order->update(['payment_status' => 'paid']);
+        }
+
+        return response()->json($payment->load('order'), 201);
     }
 
     public function verify(Request $request, string $id): JsonResponse
@@ -63,7 +72,7 @@ class PaymentController extends Controller
             ->whereHas('order', fn ($q) => $q->where('user_id', $request->user()->id))
             ->first();
 
-        if (!$payment) {
+        if (! $payment) {
             return response()->json(['message' => 'Payment not found.'], 404);
         }
 
@@ -86,7 +95,7 @@ class PaymentController extends Controller
 
         $payment = Payment::where('reference', $data['reference'])->first();
 
-        if (!$payment) {
+        if (! $payment) {
             return response()->json(['message' => 'Payment not found.'], 404);
         }
 

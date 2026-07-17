@@ -1,30 +1,30 @@
 <?php
 
-use App\Http\Controllers\Api\ImageController;
+use App\Http\Controllers\Admin\AdminBannerController;
+use App\Http\Controllers\Admin\AdminBlogController;
+use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\Admin\AdminCouponController;
+use App\Http\Controllers\Admin\AdminCustomerController;
+use App\Http\Controllers\Admin\AdminFlashSaleController;
+use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\Admin\AdminSettingController;
+use App\Http\Controllers\Admin\AdminStatisticsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\ProductController;
-use App\Http\Controllers\Api\SettingsController;
-use App\Http\Controllers\Api\PublicController;
-use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\WishlistController;
-use App\Http\Controllers\Api\SupportController;
-use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\ImageController;
 use App\Http\Controllers\Api\LoyaltyController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\PublicController;
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\SettingsController;
+use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\TestimonialController;
-use App\Http\Controllers\Admin\AdminProductController;
-use App\Http\Controllers\Admin\AdminCategoryController;
-use App\Http\Controllers\Admin\AdminBannerController;
-use App\Http\Controllers\Admin\AdminBlogController;
-use App\Http\Controllers\Admin\AdminCouponController;
-use App\Http\Controllers\Admin\AdminFlashSaleController;
-use App\Http\Controllers\Admin\AdminSettingController;
-use App\Http\Controllers\Admin\AdminOrderController;
-use App\Http\Controllers\Admin\AdminCustomerController;
-use App\Http\Controllers\Admin\AdminStatisticsController;
+use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('login', function () {
@@ -32,11 +32,11 @@ Route::get('login', function () {
 });
 
 Route::prefix('auth')->group(function () {
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
-    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:api');
-    Route::get('user', [AuthController::class, 'user'])->middleware('auth:api');
-    Route::post('refresh', [AuthController::class, 'refresh'])->middleware('auth:api');
+    Route::post('register', [AuthController::class, 'register'])->middleware('throttle:10,1');
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth.api');
+    Route::get('user', [AuthController::class, 'user'])->middleware('auth.api');
+    Route::post('refresh', [AuthController::class, 'refresh'])->middleware('auth.api');
 });
 
 Route::get('images/{path}', [ImageController::class, 'show'])->where('path', '.*');
@@ -59,14 +59,14 @@ Route::post('stock-notifications', [PublicController::class, 'stockNotifications
 Route::get('reviews', [ReviewController::class, 'index']);
 Route::get('testimonials', [TestimonialController::class, 'index']);
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth.api')->group(function () {
     Route::get('payment/history', [PaymentController::class, 'index']);
     Route::post('payment/initiate', [PaymentController::class, 'store']);
     Route::get('payment/verify/{id}', [PaymentController::class, 'verify']);
     Route::post('payment/callback', [PaymentController::class, 'callback']);
 });
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth.api')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
 
@@ -100,7 +100,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('loyalty/transactions', [LoyaltyController::class, 'transactions']);
 });
 
-Route::middleware(['auth:api', 'admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth.api', 'admin'])->prefix('admin')->group(function () {
     Route::apiResource('products', AdminProductController::class);
     Route::post('products/upload-image', [AdminProductController::class, 'uploadImage']);
     Route::apiResource('categories', AdminCategoryController::class);

@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\AuthenticateApi;
 use App\Http\Middleware\CorsMiddleware;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,10 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append([
             CorsMiddleware::class,
+            SecurityHeaders::class,
         ]);
 
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'auth.api' => AuthenticateApi::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

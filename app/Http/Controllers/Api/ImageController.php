@@ -13,7 +13,7 @@ class ImageController extends Controller
     {
         $fullPath = "products/{$path}";
 
-        if (!Storage::disk('public')->exists($fullPath)) {
+        if (! Storage::disk('public')->exists($fullPath)) {
             abort(404);
         }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use Illuminate\Http\JsonResponse;
@@ -38,9 +39,14 @@ class ReviewController extends Controller
         }
 
         $product = Product::find($data['product_id']);
-        if (!$product) {
+        if (! $product) {
             return response()->json(['message' => 'Product not found.'], 404);
         }
+
+        $verifiedPurchase = Order::where('user_id', $request->user()->id)
+            ->where('payment_status', 'paid')
+            ->whereHas('items', fn ($q) => $q->where('product_id', $product->id))
+            ->exists();
 
         $review = Review::create([
             'product_id' => $product->id,
@@ -48,7 +54,7 @@ class ReviewController extends Controller
             'rating' => $data['rating'],
             'title' => $data['title'] ?? null,
             'comment' => $data['comment'] ?? null,
-            'is_verified_purchase' => false,
+            'is_verified_purchase' => $verifiedPurchase,
         ]);
 
         return response()->json($review->load('user.profile'), 201);

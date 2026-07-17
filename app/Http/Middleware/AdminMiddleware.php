@@ -3,8 +3,8 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AdminMiddleware
 {
@@ -12,7 +12,7 @@ class AdminMiddleware
     {
         $user = $request->user();
 
-        if (!$user || !$user->is_admin) {
+        if (! $user || ! $user->is_admin) {
             return new JsonResponse([
                 'message' => 'Admin access required.',
             ], 403);

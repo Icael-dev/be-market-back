@@ -11,6 +11,7 @@ class Product extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -56,7 +57,7 @@ class Product extends Model
     protected static function booted(): void
     {
         static::creating(function (Product $product) {
-            if (!$product->id) {
+            if (! $product->id) {
                 $product->id = (string) Str::uuid();
             }
         });

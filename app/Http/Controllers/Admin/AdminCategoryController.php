@@ -49,7 +49,7 @@ class AdminCategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|string',
-            'slug' => 'sometimes|string|unique:categories,slug,' . $id,
+            'slug' => 'sometimes|string|unique:categories,slug,'.$id,
             'description' => 'sometimes|nullable|string',
             'is_active' => 'sometimes|boolean',
             'specs' => 'sometimes|nullable|array',
@@ -78,6 +78,7 @@ class AdminCategoryController extends Controller
     public function destroy(string $id): JsonResponse
     {
         Category::findOrFail($id)->delete();
+
         return response()->json(['message' => 'Category deleted.']);
     }
 }

@@ -11,6 +11,7 @@ class CartItem extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -27,7 +28,7 @@ class CartItem extends Model
     protected static function booted(): void
     {
         static::creating(function (CartItem $item) {
-            if (!$item->id) {
+            if (! $item->id) {
                 $item->id = (string) Str::uuid();
             }
         });

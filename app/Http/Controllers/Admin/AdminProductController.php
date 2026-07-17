@@ -57,25 +57,27 @@ class AdminProductController extends Controller
         $data = $validator->validated();
 
         if (empty($data['slug'])) {
-            $data['slug'] = Str::slug($data['name']) . '-' . Str::random(6);
+            $data['slug'] = Str::slug($data['name']).'-'.Str::random(6);
         } else {
             $data['slug'] = Str::slug($data['slug']);
         }
 
         if (empty($data['sku'])) {
-            $data['sku'] = 'PROD-' . Str::random(8);
+            $data['sku'] = 'PROD-'.Str::random(8);
         }
 
         $data['is_featured'] = $data['is_featured'] ?? false;
         $data['is_active'] = $data['is_active'] ?? true;
 
         $product = Product::create($data);
+
         return response()->json($product, 201);
     }
 
     public function show(string $id): JsonResponse
     {
         $product = Product::with('category')->findOrFail($id);
+
         return response()->json($product);
     }
 
@@ -85,8 +87,8 @@ class AdminProductController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => ['sometimes', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:products,slug,' . $product->id],
-            'sku' => ['nullable', 'string', 'max:100', 'unique:products,sku,' . $product->id],
+            'slug' => ['nullable', 'string', 'max:255', 'unique:products,slug,'.$product->id],
+            'sku' => ['nullable', 'string', 'max:100', 'unique:products,sku,'.$product->id],
             'description' => ['nullable', 'string'],
             'short_description' => ['nullable', 'string'],
             'price' => ['sometimes', 'numeric', 'min:0'],
@@ -130,8 +132,8 @@ class AdminProductController extends Controller
             $data['sku'] = null;
         }
 
-        if (empty($data['sku']) && !$product->sku) {
-            $data['sku'] = 'PROD-' . Str::random(8);
+        if (empty($data['sku']) && ! $product->sku) {
+            $data['sku'] = 'PROD-'.Str::random(8);
         }
 
         if (isset($data['compare_price']) && $data['compare_price'] === '') {
@@ -143,6 +145,7 @@ class AdminProductController extends Controller
         }
 
         $product->update($data);
+
         return response()->json($product->load('category'));
     }
 
@@ -150,6 +153,7 @@ class AdminProductController extends Controller
     {
         $product = Product::findOrFail($id);
         $product->delete();
+
         return response()->json(['message' => 'Product deleted.']);
     }
 
@@ -179,7 +183,7 @@ class AdminProductController extends Controller
             ->select(['id', 'name', 'slug', 'sku', 'price', 'images'])
             ->where(function ($q) use ($query) {
                 $q->where('name', 'ILIKE', "%{$query}%")
-                  ->orWhere('sku', 'ILIKE', "%{$query}%");
+                    ->orWhere('sku', 'ILIKE', "%{$query}%");
             })
             ->limit($limit)
             ->get();

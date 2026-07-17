@@ -11,6 +11,7 @@ class Category extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -31,7 +32,7 @@ class Category extends Model
     protected static function booted(): void
     {
         static::creating(function (Category $category) {
-            if (!$category->id) {
+            if (! $category->id) {
                 $category->id = (string) Str::uuid();
             }
         });

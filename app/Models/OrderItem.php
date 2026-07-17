@@ -11,6 +11,7 @@ class OrderItem extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -33,7 +34,7 @@ class OrderItem extends Model
     protected static function booted(): void
     {
         static::creating(function (OrderItem $item) {
-            if (!$item->id) {
+            if (! $item->id) {
                 $item->id = (string) Str::uuid();
             }
         });

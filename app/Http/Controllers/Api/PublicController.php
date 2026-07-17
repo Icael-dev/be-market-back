@@ -6,10 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use App\Models\BlogPost;
 use App\Models\FAQ;
-use App\Models\LegalPage;
 use App\Models\FlashSale;
+use App\Models\LegalPage;
 use App\Models\NewsletterSubscriber;
-use App\Models\Setting;
 use App\Models\StockNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,9 +35,10 @@ class PublicController extends Controller
     public function blogDetail(string $slug): JsonResponse
     {
         $post = BlogPost::where('slug', $slug)->where('is_published', true)->first();
-        if (!$post) {
+        if (! $post) {
             return response()->json(['message' => 'Blog post not found.'], 404);
         }
+
         return response()->json($post);
     }
 
@@ -55,9 +55,10 @@ class PublicController extends Controller
     public function legalPage(string $slug): JsonResponse
     {
         $page = LegalPage::where('slug', $slug)->first();
-        if (!$page) {
+        if (! $page) {
             return response()->json(['message' => 'Legal page not found.'], 404);
         }
+
         return response()->json($page);
     }
 

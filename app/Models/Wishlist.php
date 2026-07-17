@@ -11,6 +11,7 @@ class Wishlist extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -22,7 +23,7 @@ class Wishlist extends Model
     protected static function booted(): void
     {
         static::creating(function (Wishlist $item) {
-            if (!$item->id) {
+            if (! $item->id) {
                 $item->id = (string) Str::uuid();
             }
         });

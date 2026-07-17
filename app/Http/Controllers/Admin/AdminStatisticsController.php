@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Profile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminStatisticsController extends Controller
 {
@@ -107,17 +108,70 @@ class AdminStatisticsController extends Controller
         ]);
     }
 
-    public function export(Request $request): JsonResponse
+    public function export(Request $request): StreamedResponse
     {
         $type = $request->query('type', 'orders');
 
-        $data = match ($type) {
-            'customers' => Profile::orderBy('created_at', 'desc')->get(['email', 'full_name', 'phone', 'created_at']),
-            'products' => Product::orderBy('name')->get(['name', 'price', 'stock', 'is_active']),
-            'newsletter' => NewsletterSubscriber::orderBy('subscribed_at', 'desc')->get(['email', 'is_active', 'subscribed_at']),
-            default => Order::orderBy('created_at', 'desc')->get(['order_number', 'status', 'payment_status', 'total', 'created_at']),
+        $columns = match ($type) {
+            'customers' => ['email', 'full_name', 'phone', 'created_at'],
+            'products' => ['name', 'price', 'stock', 'is_active'],
+            'newsletter' => ['email', 'is_active', 'subscribed_at'],
+            default => ['order_number', 'status', 'payment_status', 'total', 'created_at'],
         };
 
-        return response()->json($data);
+        $headers = match ($type) {
+            'customers' => ['Email', 'Nom', 'Telephone', 'Inscrit le'],
+            'products' => ['Nom', 'Prix', 'Stock', 'Actif'],
+            'newsletter' => ['Email', 'Actif', 'Inscrit le'],
+            default => ['Numero', 'Statut', 'Paiement', 'Total', 'Date'],
+        };
+
+        $query = match ($type) {
+            'customers' => Profile::orderBy('created_at', 'desc'),
+            'products' => Product::orderBy('name'),
+            'newsletter' => NewsletterSubscriber::orderBy('subscribed_at', 'desc'),
+            default => Order::orderBy('created_at', 'desc'),
+        };
+
+        $filename = match ($type) {
+            'customers' => 'customers',
+            'products' => 'products',
+            'newsletter' => 'newsletter_subscribers',
+            default => 'orders',
+        };
+
+        return response()->streamDownload(function () use ($query, $columns, $headers) {
+            $output = fopen('php://output', 'w');
+
+            fprintf($output, "\xEF\xBB\xBF");
+            fputcsv($output, $headers);
+
+            $query->lazyById(500)->each(function ($row) use ($output, $columns) {
+                $values = array_map(fn ($col) => $this->formatValue($row, $col), $columns);
+                fputcsv($output, $values);
+            });
+
+            fclose($output);
+        }, "{$filename}.csv", [
+            'Content-Type' => 'text/csv; charset=utf-8',
+        ]);
+    }
+
+    /**
+     * @param  object  $row
+     */
+    protected function formatValue($row, string $column, string $type): string
+    {
+        $value = $row->{$column} ?? '';
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        return (string) $value;
     }
 }

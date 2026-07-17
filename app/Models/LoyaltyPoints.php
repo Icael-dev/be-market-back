@@ -11,6 +11,7 @@ class LoyaltyPoints extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -30,7 +31,7 @@ class LoyaltyPoints extends Model
     protected static function booted(): void
     {
         static::creating(function (LoyaltyPoints $loyaltyPoints) {
-            if (!$loyaltyPoints->id) {
+            if (! $loyaltyPoints->id) {
                 $loyaltyPoints->id = (string) Str::uuid();
             }
         });

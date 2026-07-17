@@ -11,6 +11,7 @@ class NewsletterSubscriber extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -30,7 +31,7 @@ class NewsletterSubscriber extends Model
     protected static function booted(): void
     {
         static::creating(function (NewsletterSubscriber $subscriber) {
-            if (!$subscriber->id) {
+            if (! $subscriber->id) {
                 $subscriber->id = (string) Str::uuid();
             }
         });

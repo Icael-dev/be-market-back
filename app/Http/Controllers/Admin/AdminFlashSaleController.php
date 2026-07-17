@@ -49,6 +49,7 @@ class AdminFlashSaleController extends Controller
     public function destroy(string $id): JsonResponse
     {
         FlashSale::findOrFail($id)->delete();
+
         return response()->json(['message' => 'Flash sale deleted.']);
     }
 }

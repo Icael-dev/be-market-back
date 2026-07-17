@@ -39,7 +39,7 @@ class AdminCouponController extends Controller
     {
         $coupon = Coupon::findOrFail($id);
         $coupon->update($request->validate([
-            'code' => 'sometimes|string|unique:coupons,code,' . $id,
+            'code' => 'sometimes|string|unique:coupons,code,'.$id,
             'discount_type' => 'sometimes|in:percentage,fixed',
             'discount_value' => 'sometimes|numeric',
             'min_order_amount' => 'sometimes|nullable|numeric',
@@ -55,6 +55,7 @@ class AdminCouponController extends Controller
     public function destroy(string $id): JsonResponse
     {
         Coupon::findOrFail($id)->delete();
+
         return response()->json(['message' => 'Coupon deleted.']);
     }
 }

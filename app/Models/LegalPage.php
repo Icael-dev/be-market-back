@@ -11,6 +11,7 @@ class LegalPage extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -23,7 +24,7 @@ class LegalPage extends Model
     protected static function booted(): void
     {
         static::creating(function (LegalPage $page) {
-            if (!$page->id) {
+            if (! $page->id) {
                 $page->id = (string) Str::uuid();
             }
         });

@@ -96,7 +96,7 @@ class CategorySeeder extends Seeder
         foreach ($categories as $category) {
             $slug = Str::slug($category['name']);
             $existing = Category::where('slug', $slug)->first();
-            
+
             if ($existing) {
                 $existing->update([
                     'description' => $category['description'],

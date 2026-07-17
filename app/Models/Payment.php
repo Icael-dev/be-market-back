@@ -11,6 +11,7 @@ class Payment extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -34,7 +35,7 @@ class Payment extends Model
     protected static function booted(): void
     {
         static::creating(function (Payment $payment) {
-            if (!$payment->id) {
+            if (! $payment->id) {
                 $payment->id = (string) Str::uuid();
             }
         });

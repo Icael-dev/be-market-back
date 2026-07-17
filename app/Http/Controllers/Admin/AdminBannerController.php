@@ -55,6 +55,7 @@ class AdminBannerController extends Controller
     public function destroy(string $id): JsonResponse
     {
         Banner::findOrFail($id)->delete();
+
         return response()->json(['message' => 'Banner deleted.']);
     }
 }
