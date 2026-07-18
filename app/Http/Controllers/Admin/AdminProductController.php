@@ -12,6 +12,24 @@ use Illuminate\Support\Str;
 
 class AdminProductController extends Controller
 {
+    private function validateImageValue($value, $fail): void
+    {
+        if (! is_string($value)) {
+            $fail('The '.$value.' must be a valid image path or URL.');
+            return;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL) !== false) {
+            return;
+        }
+
+        if (str_starts_with($value, '/')) {
+            return;
+        }
+
+        $fail('The image must be a valid URL or path.');
+    }
+
     public function index(): JsonResponse
     {
         return response()->json(Product::with('category')->orderBy('created_at', 'desc')->get());
@@ -32,7 +50,7 @@ class AdminProductController extends Controller
             'min_stock_alert' => ['nullable', 'integer', 'min:0'],
             'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
             'images' => ['nullable', 'array', 'max:10'],
-            'images.*' => ['nullable', 'url'],
+            'images.*' => ['nullable', fn ($attribute, $value, $fail) => $this->validateImageValue($value, $fail)],
             'specs' => ['nullable', 'array'],
             'specs.*' => ['string'],
             'dimensions' => ['nullable', 'array'],
@@ -98,7 +116,7 @@ class AdminProductController extends Controller
             'min_stock_alert' => ['nullable', 'integer', 'min:0'],
             'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
             'images' => ['nullable', 'array', 'max:10'],
-            'images.*' => ['nullable', 'url'],
+            'images.*' => ['nullable', fn ($attribute, $value, $fail) => $this->validateImageValue($value, $fail)],
             'specs' => ['nullable', 'array'],
             'specs.*' => ['string'],
             'dimensions' => ['nullable', 'array'],
@@ -160,7 +178,7 @@ class AdminProductController extends Controller
     public function uploadImage(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'image' => ['required', 'image', 'max:2048'],
+            'image' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:10240'],
         ]);
 
         if ($validator->fails()) {
