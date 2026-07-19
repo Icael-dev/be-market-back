@@ -44,8 +44,8 @@ Route::get('images/{path}', [ImageController::class, 'show'])->where('path', '.*
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/price-bounds', [ProductController::class, 'priceBounds']);
+Route::get('products/suggestions', [ProductController::class, 'suggestions']);
 Route::get('products/{slug}', [ProductController::class, 'show']);
-Route::get('products/suggestions', [AdminProductController::class, 'suggestions']);
 Route::get('banners', [PublicController::class, 'banners']);
 Route::get('blog-posts', [PublicController::class, 'blog']);
 Route::get('blog-posts/{slug}', [PublicController::class, 'blogDetail']);

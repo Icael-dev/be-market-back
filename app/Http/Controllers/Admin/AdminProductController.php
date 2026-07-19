@@ -14,16 +14,8 @@ class AdminProductController extends Controller
 {
     private function validateImageValue($value, $fail): void
     {
-        if (! is_string($value)) {
-            $fail('The '.$value.' must be a valid image path or URL.');
-            return;
-        }
-
-        if (filter_var($value, FILTER_VALIDATE_URL) !== false) {
-            return;
-        }
-
-        if (str_starts_with($value, '/')) {
+        if (is_string($value)
+            && (filter_var($value, FILTER_VALIDATE_URL) !== false || str_starts_with($value, '/'))) {
             return;
         }
 
@@ -190,22 +182,5 @@ class AdminProductController extends Controller
         return response()->json([
             'url' => Storage::url($path),
         ], 201);
-    }
-
-    public function suggestions(Request $request): JsonResponse
-    {
-        $query = $request->query('q', '');
-        $limit = min($request->query('limit', 10), 20);
-
-        $products = Product::query()
-            ->select(['id', 'name', 'slug', 'sku', 'price', 'images'])
-            ->where(function ($q) use ($query) {
-                $q->where('name', 'ILIKE', "%{$query}%")
-                    ->orWhere('sku', 'ILIKE', "%{$query}%");
-            })
-            ->limit($limit)
-            ->get();
-
-        return response()->json($products);
     }
 }

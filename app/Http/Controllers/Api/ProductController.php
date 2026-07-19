@@ -126,4 +126,22 @@ class ProductController extends Controller
 
         return response()->json($product);
     }
+
+    public function suggestions(Request $request): JsonResponse
+    {
+        $query = (string) $request->query('q', '');
+        $limit = min((int) $request->query('limit', 10), 20);
+
+        $products = Product::query()
+            ->where('is_active', true)
+            ->select(['id', 'name', 'slug', 'sku', 'price', 'images'])
+            ->where(function ($builder) use ($query) {
+                $builder->where('name', 'ilike', "%{$query}%")
+                    ->orWhere('sku', 'ilike', "%{$query}%");
+            })
+            ->limit($limit)
+            ->get();
+
+        return response()->json($products);
+    }
 }
