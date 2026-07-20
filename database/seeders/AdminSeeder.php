@@ -23,9 +23,12 @@ class AdminSeeder extends Seeder
                 'name' => $name,
                 'password' => Hash::make($password),
                 'is_admin' => true,
+                'role' => User::ROLE_ADMIN,
             ]);
             $user->id = (string) Str::uuid();
             $user->save();
+        } elseif ($user->role !== User::ROLE_ADMIN) {
+            $user->update(['is_admin' => true, 'role' => User::ROLE_ADMIN]);
         }
 
         Profile::updateOrCreate(
@@ -37,6 +40,7 @@ class AdminSeeder extends Seeder
                 'phone' => null,
                 'avatar_url' => null,
                 'is_admin' => true,
+                'role' => User::ROLE_ADMIN,
             ]
         );
     }

@@ -37,6 +37,8 @@ class AuthController extends Controller
             'name' => $fullName,
             'email' => $request->input('email'),
             'password' => Hash::make($request->input('password')),
+            'is_admin' => false,
+            'role' => User::ROLE_CLIENT,
         ]);
 
         Profile::create([
@@ -45,6 +47,8 @@ class AuthController extends Controller
             'full_name' => $fullName,
             'phone' => null,
             'avatar_url' => null,
+            'is_admin' => false,
+            'role' => User::ROLE_CLIENT,
         ]);
 
         $token = $user->createToken('api-token')->accessToken;

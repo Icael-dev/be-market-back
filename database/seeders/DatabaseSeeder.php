@@ -21,11 +21,15 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
         ]);
 
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Compte de demo : uniquement en local, jamais en production.
+        // (email connu + mot de passe "password" -> risque si expose en prod)
+        // firstOrCreate rend le seeder idempotent (relançable sans planter
+        // sur la contrainte unique de l'email s'il existe deja).
+        if (app()->environment('local')) {
+            User::firstOrCreate(
+                ['email' => 'test@example.com'],
+                User::factory()->make(['name' => 'Test User', 'email' => 'test@example.com'])->getAttributes()
+            );
+        }
     }
 }

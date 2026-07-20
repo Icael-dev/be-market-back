@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminSettingController;
 use App\Http\Controllers\Admin\AdminStatisticsController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
@@ -44,8 +45,8 @@ Route::get('images/{path}', [ImageController::class, 'show'])->where('path', '.*
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/price-bounds', [ProductController::class, 'priceBounds']);
+Route::get('products/suggestions', [ProductController::class, 'suggestions']);
 Route::get('products/{slug}', [ProductController::class, 'show']);
-Route::get('products/suggestions', [AdminProductController::class, 'suggestions']);
 Route::get('banners', [PublicController::class, 'banners']);
 Route::get('blog-posts', [PublicController::class, 'blog']);
 Route::get('blog-posts/{slug}', [PublicController::class, 'blogDetail']);
@@ -108,11 +109,19 @@ Route::middleware(['auth.api', 'admin'])->prefix('admin')->group(function () {
     Route::apiResource('blog-posts', AdminBlogController::class);
     Route::apiResource('coupons', AdminCouponController::class);
     Route::apiResource('flash-sales', AdminFlashSaleController::class);
-    Route::get('settings', [AdminSettingController::class, 'index']);
-    Route::put('settings', [AdminSettingController::class, 'update']);
     Route::get('orders', [AdminOrderController::class, 'index']);
     Route::put('orders/{id}', [AdminOrderController::class, 'update']);
     Route::get('customers', [AdminCustomerController::class, 'index']);
     Route::get('statistics', [AdminStatisticsController::class, 'index']);
     Route::get('export', [AdminStatisticsController::class, 'export']);
+});
+
+// Super-admin only: settings and staff/user management.
+Route::middleware(['auth.api', 'admin.super'])->prefix('admin')->group(function () {
+    Route::get('settings', [AdminSettingController::class, 'index']);
+    Route::put('settings', [AdminSettingController::class, 'update']);
+    Route::get('users', [AdminUserController::class, 'index']);
+    Route::post('users', [AdminUserController::class, 'store']);
+    Route::put('users/{id}', [AdminUserController::class, 'update']);
+    Route::delete('users/{id}', [AdminUserController::class, 'destroy']);
 });

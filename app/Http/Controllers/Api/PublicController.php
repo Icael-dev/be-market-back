@@ -16,9 +16,11 @@ use Illuminate\Support\Facades\Validator;
 
 class PublicController extends Controller
 {
-    public function banners(): JsonResponse
+    public function banners(Request $request): JsonResponse
     {
-        return response()->json(Banner::where('is_active', true)->orderBy('sort_order')->get());
+        return response()->json(
+            Banner::where('is_active', true)->orderBy('sort_order')->get()
+        );
     }
 
     public function blog(Request $request): JsonResponse

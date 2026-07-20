@@ -4,10 +4,16 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AuthenticateApi;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SuperAdminMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+
+if (function_exists('ini_set')) {
+    ini_set('upload_max_filesize', '12M');
+    ini_set('post_max_size', '14M');
+}
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'admin.super' => SuperAdminMiddleware::class,
             'auth.api' => AuthenticateApi::class,
         ]);
     })
