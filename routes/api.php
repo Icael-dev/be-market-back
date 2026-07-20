@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminSettingController;
 use App\Http\Controllers\Admin\AdminStatisticsController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
@@ -108,11 +109,19 @@ Route::middleware(['auth.api', 'admin'])->prefix('admin')->group(function () {
     Route::apiResource('blog-posts', AdminBlogController::class);
     Route::apiResource('coupons', AdminCouponController::class);
     Route::apiResource('flash-sales', AdminFlashSaleController::class);
-    Route::get('settings', [AdminSettingController::class, 'index']);
-    Route::put('settings', [AdminSettingController::class, 'update']);
     Route::get('orders', [AdminOrderController::class, 'index']);
     Route::put('orders/{id}', [AdminOrderController::class, 'update']);
     Route::get('customers', [AdminCustomerController::class, 'index']);
     Route::get('statistics', [AdminStatisticsController::class, 'index']);
     Route::get('export', [AdminStatisticsController::class, 'export']);
+});
+
+// Super-admin only: settings and staff/user management.
+Route::middleware(['auth.api', 'admin.super'])->prefix('admin')->group(function () {
+    Route::get('settings', [AdminSettingController::class, 'index']);
+    Route::put('settings', [AdminSettingController::class, 'update']);
+    Route::get('users', [AdminUserController::class, 'index']);
+    Route::post('users', [AdminUserController::class, 'store']);
+    Route::put('users/{id}', [AdminUserController::class, 'update']);
+    Route::delete('users/{id}', [AdminUserController::class, 'destroy']);
 });
