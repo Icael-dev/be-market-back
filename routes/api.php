@@ -97,21 +97,35 @@ Route::middleware('auth.api')->group(function () {
 
     Route::post('reviews', [ReviewController::class, 'store']);
 
+    Route::post('coupons/validate', [CouponController::class, 'validate']);
     Route::get('loyalty/points', [LoyaltyController::class, 'points']);
     Route::get('loyalty/transactions', [LoyaltyController::class, 'transactions']);
 });
 
 Route::middleware(['auth.api', 'admin'])->prefix('admin')->group(function () {
     Route::apiResource('products', AdminProductController::class);
+    Route::post('products/{id}/restore', [AdminProductController::class, 'restore']);
     Route::post('products/upload-image', [AdminProductController::class, 'uploadImage']);
     Route::apiResource('categories', AdminCategoryController::class);
+    Route::post('categories/{id}/restore', [AdminCategoryController::class, 'restore']);
     Route::apiResource('banners', AdminBannerController::class);
     Route::apiResource('blog-posts', AdminBlogController::class);
     Route::apiResource('coupons', AdminCouponController::class);
     Route::apiResource('flash-sales', AdminFlashSaleController::class);
     Route::get('orders', [AdminOrderController::class, 'index']);
     Route::put('orders/{id}', [AdminOrderController::class, 'update']);
+    Route::post('orders/{id}/restore', [AdminOrderController::class, 'restore']);
     Route::get('customers', [AdminCustomerController::class, 'index']);
+    Route::get('customers/{id}', [AdminCustomerController::class, 'show']);
+    Route::get('customers/{id}/orders', [AdminCustomerController::class, 'orders']);
+    Route::get('customers/{id}/loyalty', [AdminCustomerController::class, 'loyalty']);
+    Route::get('customers/{id}/payments', [AdminCustomerController::class, 'payments']);
+    Route::get('payments', [AdminPaymentController::class, 'index']);
+    Route::get('loyalty/transactions', [AdminLoyaltyController::class, 'transactions']);
+    Route::get('support/tickets', [AdminSupportController::class, 'index']);
+    Route::get('support/tickets/{id}', [AdminSupportController::class, 'show']);
+    Route::put('support/tickets/{id}', [AdminSupportController::class, 'update']);
+    Route::post('support/tickets/{id}/messages', [AdminSupportController::class, 'storeMessage']);
     Route::get('statistics', [AdminStatisticsController::class, 'index']);
     Route::get('export', [AdminStatisticsController::class, 'export']);
 });
@@ -124,4 +138,5 @@ Route::middleware(['auth.api', 'admin.super'])->prefix('admin')->group(function 
     Route::post('users', [AdminUserController::class, 'store']);
     Route::put('users/{id}', [AdminUserController::class, 'update']);
     Route::delete('users/{id}', [AdminUserController::class, 'destroy']);
+    Route::post('users/{id}/restore', [AdminUserController::class, 'restore']);
 });

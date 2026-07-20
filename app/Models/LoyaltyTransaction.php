@@ -17,9 +17,11 @@ class LoyaltyTransaction extends Model
     protected $fillable = [
         'id',
         'user_id',
+        'order_id',
         'type',
         'points',
         'description',
+        'reference',
     ];
 
     protected $casts = [
@@ -38,5 +40,10 @@ class LoyaltyTransaction extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
     }
 }

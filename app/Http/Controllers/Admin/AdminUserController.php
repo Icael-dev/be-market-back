@@ -18,7 +18,7 @@ class AdminUserController extends Controller
      */
     public function index(): JsonResponse
     {
-        $users = User::with('profile')
+        $users = User::withTrashed()->with('profile')
             ->whereIn('role', User::STAFF_ROLES)
             ->orderBy('created_at', 'desc')
             ->get()
@@ -67,7 +67,7 @@ class AdminUserController extends Controller
 
     public function update(Request $request, string $id): JsonResponse
     {
-        $user = User::with('profile')->findOrFail($id);
+        $user = User::withTrashed()->with('profile')->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
             'full_name' => ['sometimes', 'string', 'max:255'],
@@ -130,7 +130,7 @@ class AdminUserController extends Controller
 
     public function destroy(Request $request, string $id): JsonResponse
     {
-        $user = User::findOrFail($id);
+        $user = User::withTrashed()->findOrFail($id);
 
         if ($request->user()->id === $user->id) {
             return response()->json(['message' => 'Vous ne pouvez pas supprimer votre propre compte.'], 422);
@@ -139,6 +139,14 @@ class AdminUserController extends Controller
         $user->delete();
 
         return response()->json(['message' => 'Utilisateur supprime.']);
+    }
+
+    public function restore(string $id): JsonResponse
+    {
+        $user = User::withTrashed()->findOrFail($id);
+        $user->restore();
+
+        return response()->json(['message' => 'Utilisateur restaure.', 'user' => $this->formatUser($user->load('profile'))]);
     }
 
     private function formatUser(User $user): array

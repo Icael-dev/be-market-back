@@ -24,7 +24,7 @@ class CartController extends Controller
         $cart = $this->getCart($request);
 
         return response()->json(
-            $cart->items()->with('product')->get()
+            $cart->items()->with('product.activeFlashSale')->get()
         );
     }
 

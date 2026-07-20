@@ -66,7 +66,7 @@ class PublicController extends Controller
 
     public function flashSales(Request $request): JsonResponse
     {
-        $query = FlashSale::with('product');
+        $query = FlashSale::with('product.activeFlashSale');
 
         if ($request->boolean('active')) {
             $now = now();

@@ -11,7 +11,7 @@ class AdminCategoryController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Category::with('specs')->orderBy('name')->get());
+        return response()->json(Category::withTrashed()->with('specs')->orderBy('name')->get());
     }
 
     public function store(Request $request): JsonResponse
@@ -77,8 +77,16 @@ class AdminCategoryController extends Controller
 
     public function destroy(string $id): JsonResponse
     {
-        Category::findOrFail($id)->delete();
+        Category::withTrashed()->findOrFail($id)->delete();
 
         return response()->json(['message' => 'Category deleted.']);
+    }
+
+    public function restore(string $id): JsonResponse
+    {
+        $category = Category::withTrashed()->findOrFail($id);
+        $category->restore();
+
+        return response()->json(['message' => 'Category restored.', 'category' => $category->load('specs')]);
     }
 }

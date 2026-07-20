@@ -11,7 +11,7 @@ class ProductController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Product::where('is_active', true)->with('category');
+        $query = Product::where('is_active', true)->with(['category', 'activeFlashSale']);
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->query('category_id'));
@@ -117,7 +117,7 @@ class ProductController extends Controller
     {
         $product = Product::where('slug', $slug)
             ->where('is_active', true)
-            ->with('category')
+            ->with(['category', 'activeFlashSale'])
             ->first();
 
         if (! $product) {
@@ -134,6 +134,7 @@ class ProductController extends Controller
 
         $products = Product::query()
             ->where('is_active', true)
+            ->with('activeFlashSale')
             ->select(['id', 'name', 'slug', 'sku', 'price', 'images'])
             ->where(function ($builder) use ($query) {
                 $builder->where('name', 'ilike', "%{$query}%")

@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Str;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public $incrementing = false;
 
@@ -55,6 +56,11 @@ class Product extends Model
         'weight' => 'decimal:2',
     ];
 
+    protected $appends = [
+        'effective_price',
+        'flash_discount_percentage',
+    ];
+
     protected static function booted(): void
     {
         static::creating(function (Product $product) {
@@ -72,6 +78,70 @@ class Product extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function flashSales()
+    {
+        return $this->hasMany(FlashSale::class);
+    }
+
+    /**
+     * Currently running flash sale for this product, if any.
+     */
+    public function activeFlashSale()
+    {
+        $now = now();
+
+        return $this->hasOne(FlashSale::class)
+            ->where('is_active', true)
+            ->where('starts_at', '<=', $now)
+            ->where('ends_at', '>=', $now)
+            ->orderByDesc('discount_percentage');
+    }
+
+    /**
+     * Discount percentage from the active flash sale (0 when none). Authoritative.
+     */
+    public function activeFlashDiscount(): int
+    {
+        $sale = $this->relationLoaded('activeFlashSale')
+            ? $this->getRelation('activeFlashSale')
+            : $this->activeFlashSale()->first();
+
+        if (! $sale) {
+            return 0;
+        }
+
+        return max(0, min(99, (int) $sale->discount_percentage));
+    }
+
+    /**
+     * Server-side authoritative unit price after applying any active flash sale.
+     */
+    public function effectivePriceValue(): float
+    {
+        $base = (float) $this->price;
+        $discount = $this->activeFlashDiscount();
+
+        if ($discount <= 0) {
+            return round($base, 2);
+        }
+
+        return round($base * (1 - $discount / 100), 2);
+    }
+
+    protected function effectivePrice(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->effectivePriceValue(),
+        );
+    }
+
+    protected function flashDiscountPercentage(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->activeFlashDiscount(),
+        );
     }
 
     protected function images(): Attribute

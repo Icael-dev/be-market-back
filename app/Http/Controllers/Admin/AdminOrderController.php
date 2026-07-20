@@ -11,7 +11,7 @@ class AdminOrderController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Order::with('user', 'items.product')->orderBy('created_at', 'desc');
+        $query = Order::withTrashed()->with('user', 'items.product')->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
@@ -22,7 +22,7 @@ class AdminOrderController extends Controller
 
     public function update(Request $request, string $id): JsonResponse
     {
-        $order = Order::with('user', 'items.product')->findOrFail($id);
+        $order = Order::withTrashed()->with('user', 'items.product')->findOrFail($id);
         $data = $request->validate([
             'status' => 'sometimes|in:pending,confirmed,processing,shipped,delivered,cancelled',
             'payment_status' => 'sometimes|in:pending,processing,paid,failed,refunded',
@@ -31,5 +31,13 @@ class AdminOrderController extends Controller
         $order->update($data);
 
         return response()->json($order->refresh()->load('user', 'items.product'));
+    }
+
+    public function restore(string $id): JsonResponse
+    {
+        $order = Order::withTrashed()->findOrFail($id);
+        $order->restore();
+
+        return response()->json(['message' => 'Order restored.', 'order' => $order->load('user', 'items.product')]);
     }
 }

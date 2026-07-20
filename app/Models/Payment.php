@@ -17,6 +17,7 @@ class Payment extends Model
     protected $fillable = [
         'id',
         'order_id',
+        'user_id',
         'payment_method',
         'amount',
         'status',
@@ -38,11 +39,20 @@ class Payment extends Model
             if (! $payment->id) {
                 $payment->id = (string) Str::uuid();
             }
+            if (! $payment->user_id && $payment->order_id) {
+                $order = Order::find($payment->order_id);
+                $payment->user_id = $order?->user_id;
+            }
         });
     }
 
     public function order()
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

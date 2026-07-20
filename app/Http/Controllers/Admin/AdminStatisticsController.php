@@ -160,7 +160,7 @@ class AdminStatisticsController extends Controller
     /**
      * @param  object  $row
      */
-    protected function formatValue($row, string $column, string $type): string
+    protected function formatValue($row, string $column): string
     {
         $value = $row->{$column} ?? '';
 

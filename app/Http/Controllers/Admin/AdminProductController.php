@@ -24,7 +24,7 @@ class AdminProductController extends Controller
 
     public function index(): JsonResponse
     {
-        return response()->json(Product::with('category')->orderBy('created_at', 'desc')->get());
+        return response()->json(Product::withTrashed()->with('category')->orderBy('created_at', 'desc')->get());
     }
 
     public function store(Request $request): JsonResponse
@@ -161,10 +161,18 @@ class AdminProductController extends Controller
 
     public function destroy(string $id): JsonResponse
     {
-        $product = Product::findOrFail($id);
+        $product = Product::withTrashed()->findOrFail($id);
         $product->delete();
 
         return response()->json(['message' => 'Product deleted.']);
+    }
+
+    public function restore(string $id): JsonResponse
+    {
+        $product = Product::withTrashed()->findOrFail($id);
+        $product->restore();
+
+        return response()->json(['message' => 'Product restored.', 'product' => $product->load('category')]);
     }
 
     public function uploadImage(Request $request): JsonResponse
