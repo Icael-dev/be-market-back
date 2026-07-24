@@ -10,6 +10,8 @@ class FAQ extends Model
 {
     use HasFactory;
 
+    protected $table = 'faqs';
+
     public $incrementing = false;
 
     protected $keyType = 'string';

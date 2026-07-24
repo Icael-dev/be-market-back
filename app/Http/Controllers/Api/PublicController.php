@@ -9,6 +9,7 @@ use App\Models\FAQ;
 use App\Models\FlashSale;
 use App\Models\LegalPage;
 use App\Models\NewsletterSubscriber;
+use App\Models\Product;
 use App\Models\StockNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,7 +42,19 @@ class PublicController extends Controller
             return response()->json(['message' => 'Blog post not found.'], 404);
         }
 
-        return response()->json($post);
+        $relatedProducts = collect($post->related_product_ids ?? [])
+            ->filter()
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $data = $post->toArray();
+        $data['related_products'] = ! empty($relatedProducts)
+            ? Product::whereIn('id', $relatedProducts)->where('is_active', true)->get()
+            : [];
+
+        return response()->json($data);
     }
 
     public function faqs(): JsonResponse

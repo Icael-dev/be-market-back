@@ -20,12 +20,14 @@ class LoyaltyPoints extends Model
         'points',
         'total_earned',
         'total_redeemed',
+        'points_expire_at',
     ];
 
     protected $casts = [
         'points' => 'integer',
         'total_earned' => 'integer',
         'total_redeemed' => 'integer',
+        'points_expire_at' => 'datetime',
     ];
 
     protected static function booted(): void

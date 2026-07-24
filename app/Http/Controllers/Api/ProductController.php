@@ -55,6 +55,22 @@ class ProductController extends Controller
             $query->where('price', '<=', $request->query('max_price'));
         }
 
+        if ($request->boolean('flash_sale')) {
+            $query->whereHas('activeFlashSale');
+        }
+
+        if ($request->filled('condition')) {
+            $query->where('condition', $request->query('condition'));
+        }
+
+        if ($request->boolean('in_stock')) {
+            $query->where('stock', '>', 0);
+        }
+
+        if ($request->boolean('on_sale')) {
+            $query->whereNotNull('compare_price')->where('compare_price', '>', 'price');
+        }
+
         $sort = match ($request->query('sort')) {
             'price_asc' => ['price', 'asc'],
             'price_desc' => ['price', 'desc'],

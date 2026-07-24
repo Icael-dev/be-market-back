@@ -6,14 +6,19 @@ use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminCouponController;
 use App\Http\Controllers\Admin\AdminCustomerController;
 use App\Http\Controllers\Admin\AdminFlashSaleController;
+use App\Http\Controllers\Admin\AdminImageController;
+use App\Http\Controllers\Admin\AdminLoyaltyController;
 use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminPaymentController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminSettingController;
 use App\Http\Controllers\Admin\AdminStatisticsController;
+use App\Http\Controllers\Admin\AdminSupportController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\ImageController;
 use App\Http\Controllers\Api\LoyaltyController;
 use App\Http\Controllers\Api\OrderController;
@@ -106,12 +111,12 @@ Route::middleware(['auth.api', 'admin'])->prefix('admin')->group(function () {
     Route::apiResource('products', AdminProductController::class);
     Route::post('products/{id}/restore', [AdminProductController::class, 'restore']);
     Route::post('products/upload-image', [AdminProductController::class, 'uploadImage']);
+    Route::post('products/{id}/add-stock', [AdminProductController::class, 'addStock']);
+    Route::post('upload-image', [AdminImageController::class, 'upload']);
     Route::apiResource('categories', AdminCategoryController::class);
     Route::post('categories/{id}/restore', [AdminCategoryController::class, 'restore']);
     Route::apiResource('banners', AdminBannerController::class);
     Route::apiResource('blog-posts', AdminBlogController::class);
-    Route::apiResource('coupons', AdminCouponController::class);
-    Route::apiResource('flash-sales', AdminFlashSaleController::class);
     Route::get('orders', [AdminOrderController::class, 'index']);
     Route::put('orders/{id}', [AdminOrderController::class, 'update']);
     Route::post('orders/{id}/restore', [AdminOrderController::class, 'restore']);
@@ -122,16 +127,23 @@ Route::middleware(['auth.api', 'admin'])->prefix('admin')->group(function () {
     Route::get('customers/{id}/payments', [AdminCustomerController::class, 'payments']);
     Route::get('payments', [AdminPaymentController::class, 'index']);
     Route::get('loyalty/transactions', [AdminLoyaltyController::class, 'transactions']);
+    Route::get('loyalty/points', [AdminLoyaltyController::class, 'points']);
     Route::get('support/tickets', [AdminSupportController::class, 'index']);
     Route::get('support/tickets/{id}', [AdminSupportController::class, 'show']);
     Route::put('support/tickets/{id}', [AdminSupportController::class, 'update']);
     Route::post('support/tickets/{id}/messages', [AdminSupportController::class, 'storeMessage']);
     Route::get('statistics', [AdminStatisticsController::class, 'index']);
+    Route::get('statistics/top-products', [AdminStatisticsController::class, 'topProducts']);
+    Route::get('statistics/low-stock', [AdminStatisticsController::class, 'lowStock']);
+    Route::get('statistics/coupons', [AdminStatisticsController::class, 'couponStats']);
+    Route::get('statistics/category-sales', [AdminStatisticsController::class, 'categorySales']);
     Route::get('export', [AdminStatisticsController::class, 'export']);
 });
 
-// Super-admin only: settings and staff/user management.
+// Super-admin only: coupons, flash sales, settings and staff/user management.
 Route::middleware(['auth.api', 'admin.super'])->prefix('admin')->group(function () {
+    Route::apiResource('coupons', AdminCouponController::class);
+    Route::apiResource('flash-sales', AdminFlashSaleController::class);
     Route::get('settings', [AdminSettingController::class, 'index']);
     Route::put('settings', [AdminSettingController::class, 'update']);
     Route::get('users', [AdminUserController::class, 'index']);

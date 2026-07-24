@@ -24,6 +24,8 @@ class AdminBlogController extends Controller
             'image_url' => 'sometimes|nullable|string',
             'published_at' => 'sometimes|nullable|date',
             'is_published' => 'sometimes|boolean',
+            'related_product_ids' => 'sometimes|nullable|array',
+            'related_product_ids.*' => 'uuid|exists:products,id',
         ]));
 
         return response()->json($blogPost, 201);
@@ -45,6 +47,8 @@ class AdminBlogController extends Controller
             'image_url' => 'sometimes|nullable|string',
             'published_at' => 'sometimes|nullable|date',
             'is_published' => 'sometimes|boolean',
+            'related_product_ids' => 'sometimes|nullable|array',
+            'related_product_ids.*' => 'uuid|exists:products,id',
         ]));
 
         return response()->json($blogPost);

@@ -10,6 +10,7 @@ use App\Models\LoyaltyPoints;
 use App\Models\LoyaltyTransaction;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\CouponService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
 {
+    public function __construct(private CouponService $coupons) {}
+
     public function checkout(Request $request): JsonResponse
     {
         $data = $request->only(['shipping_address', 'billing_address', 'payment_method', 'notes', 'coupon_code', 'loyalty_points_to_redeem']);
@@ -57,56 +60,19 @@ class OrderController extends Controller
             $subtotal += $item->product->effectivePriceValue() * $item->quantity;
         }
         $subtotal = round($subtotal, 2);
+        $userId = $request->user()->id;
 
         $discount = 0;
         $couponId = null;
         if (! empty($data['coupon_code'])) {
-            $coupon = Coupon::where('code', strtoupper($data['coupon_code']))
-                ->where('is_active', true)
-                ->first();
+            $result = $this->coupons->validate($data['coupon_code'], $subtotal, $userId);
 
-            if (! $coupon) {
-                return response()->json(['message' => 'Invalid coupon code.'], 400);
+            if (! $result['valid']) {
+                return response()->json(['message' => $result['message']], 400);
             }
 
-            $now = now();
-            if ($coupon->starts_at && $coupon->starts_at > $now) {
-                return response()->json(['message' => 'Coupon is not yet active.'], 400);
-            }
-
-            if ($coupon->expires_at && $coupon->expires_at < $now) {
-                return response()->json(['message' => 'Coupon has expired.'], 400);
-            }
-
-            $coupon = Coupon::where('id', $coupon->id)->lockForUpdate()->first();
-
-            if ($coupon->max_uses && $coupon->uses_count >= $coupon->max_uses) {
-                return response()->json(['message' => 'Coupon has reached maximum uses.'], 400);
-            }
-
-            $userUsage = CouponUsage::where('coupon_id', $coupon->id)
-                ->where('user_id', $userId)
-                ->exists();
-            if ($userUsage) {
-                return response()->json(['message' => 'You have already used this coupon.'], 400);
-            }
-
-            if ($subtotal < ($coupon->min_order_amount ?? 0)) {
-                return response()->json(['message' => "Minimum order amount for this coupon is {$coupon->min_order_amount}."], 400);
-            }
-
-            if ($coupon->discount_type === 'percentage') {
-                $pct = min(100, max(0, (float) $coupon->discount_value));
-                if ($pct <= 0) {
-                    return response()->json(['message' => 'Invalid coupon discount.'], 400);
-                }
-                $discount = round($subtotal * ($pct / 100), 2);
-            } else {
-                $fixed = min((float) $coupon->discount_value, $subtotal);
-                $discount = round(max(0, $fixed), 2);
-            }
-
-            $couponId = $coupon->id;
+            $couponId = $result['coupon']->id;
+            $discount = $result['discount'];
         }
 
         $loyaltyDiscount = 0;
@@ -118,11 +84,11 @@ class OrderController extends Controller
                 ['points' => 0, 'total_earned' => 0, 'total_redeemed' => 0]
             );
 
-            $maxRedeemablePoints = (int) floor(($subtotal - $discount) * 2); // 1 point = 50 FCFA
+            $maxRedeemablePoints = (int) floor(($subtotal - $discount) * 4); // 1 point = 25 FCFA
             $pointsToRedeem = min($requestedPoints, $loyaltyPoints->points, $maxRedeemablePoints);
 
             if ($pointsToRedeem > 0) {
-                $loyaltyDiscount = round($pointsToRedeem * 50, 2);
+                $loyaltyDiscount = round($pointsToRedeem * 25, 2);
                 $loyaltyPointsRedeemed = $pointsToRedeem;
             }
         }
@@ -131,7 +97,6 @@ class OrderController extends Controller
         $tax = round(($subtotal - $discount - $loyaltyDiscount) * 0.1, 2);
         $total = round($subtotal - $discount - $loyaltyDiscount + $shippingFee + $tax, 2);
 
-        $userId = $request->user()->id;
         $paymentMethod = $data['payment_method'] ?? 'cash_on_delivery';
 
         $order = DB::transaction(function () use ($items, $subtotal, $discount, $shippingFee, $tax, $total, $data, $userId, $paymentMethod, $couponId, $loyaltyDiscount, $loyaltyPointsRedeemed) {
@@ -197,7 +162,7 @@ class OrderController extends Controller
                 ]);
             }
 
-            $pointsEarned = (int) floor(($subtotal - $discount - $loyaltyDiscount) / 1000);
+            $pointsEarned = (int) floor(($subtotal - $discount - $loyaltyDiscount) / 2500);
             if ($pointsEarned > 0) {
                 $loyalty = LoyaltyPoints::where('user_id', $userId)->lockForUpdate()->firstOrCreate(
                     ['user_id' => $userId],
@@ -205,6 +170,7 @@ class OrderController extends Controller
                 );
                 $loyalty->points += $pointsEarned;
                 $loyalty->total_earned += $pointsEarned;
+                $loyalty->points_expire_at = now()->addMonths(12);
                 $loyalty->save();
 
                 LoyaltyTransaction::create([

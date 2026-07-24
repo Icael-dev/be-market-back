@@ -24,11 +24,13 @@ class BlogPost extends Model
         'author_id',
         'is_published',
         'published_at',
+        'related_product_ids',
     ];
 
     protected $casts = [
         'is_published' => 'boolean',
         'published_at' => 'datetime',
+        'related_product_ids' => 'array',
     ];
 
     protected static function booted(): void

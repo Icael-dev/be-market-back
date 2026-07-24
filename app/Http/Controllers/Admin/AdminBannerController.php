@@ -13,6 +13,7 @@ class AdminBannerController extends Controller
     {
         if (! is_string($value)) {
             $fail('The image must be a valid URL or path.');
+
             return;
         }
 
@@ -40,7 +41,7 @@ class AdminBannerController extends Controller
             'image_url' => ['required', fn ($attribute, $value, $fail) => $this->validateImageValue($value, $fail)],
             'link_url' => 'sometimes|nullable|string|max:255',
             'button_text' => 'sometimes|nullable|string|max:255',
-            'sort_order' => 'sometimes|integer',
+            'sort_order' => 'sometimes|nullable|integer',
             'is_active' => 'sometimes|boolean',
         ]));
 
@@ -61,7 +62,7 @@ class AdminBannerController extends Controller
             'image_url' => ['sometimes', fn ($attribute, $value, $fail) => $this->validateImageValue($value, $fail)],
             'link_url' => 'sometimes|nullable|string|max:255',
             'button_text' => 'sometimes|nullable|string|max:255',
-            'sort_order' => 'sometimes|integer',
+            'sort_order' => 'sometimes|nullable|integer',
             'is_active' => 'sometimes|boolean',
         ]));
 

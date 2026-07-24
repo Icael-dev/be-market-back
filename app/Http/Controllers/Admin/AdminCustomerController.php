@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\LoyaltyPoints;
 use App\Models\LoyaltyTransaction;
 use App\Models\Payment;
-use App\Models\Profile;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,21 +14,34 @@ class AdminCustomerController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Profile::with('user.orders')->orderBy('created_at', 'desc');
+        $query = User::query()
+            ->where('role', User::ROLE_CLIENT)
+            ->with('profile')
+            ->withCount('orders')
+            ->withSum('orders as total_spent', 'total')
+            ->orderByDesc('created_at');
 
         if ($request->filled('email')) {
             $query->where('email', 'like', '%'.$request->input('email').'%');
         }
 
-        $customers = $query->get()->map(function (Profile $profile) {
-            $orders = $profile->user?->orders ?? collect();
-            $data = $profile->toArray();
-            $data['user_id'] = $profile->user_id;
-            $data['orders_count'] = $orders->count();
-            $data['total_spent'] = (float) $orders->sum('total');
-            unset($data['user']);
+        $customers = $query->get()->map(function (User $user) {
+            $profile = $user->profile;
 
-            return $data;
+            return [
+                'id' => $profile?->id ?? $user->id,
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'full_name' => $profile?->full_name ?? $user->name,
+                'phone' => $profile?->phone ?? null,
+                'avatar_url' => $profile?->avatar_url ?? null,
+                'is_admin' => $user->is_admin,
+                'role' => $user->role,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+                'orders_count' => (int) ($user->orders_count ?? 0),
+                'total_spent' => (float) ($user->total_spent ?? 0),
+            ];
         });
 
         return response()->json($customers);

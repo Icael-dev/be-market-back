@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Str;
 
 class Banner extends Model
@@ -47,6 +47,7 @@ class Banner extends Model
                 if (is_string($value) && str_starts_with($value, '/storage/products/')) {
                     return str_replace('/storage/products/', '/api/images/', $value);
                 }
+
                 return $value;
             },
         );

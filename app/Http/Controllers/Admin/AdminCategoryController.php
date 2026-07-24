@@ -9,6 +9,25 @@ use Illuminate\Http\Request;
 
 class AdminCategoryController extends Controller
 {
+    private function validateImageValue($value, $fail): void
+    {
+        if (! is_string($value)) {
+            $fail('The image must be a valid URL or path.');
+
+            return;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL) !== false) {
+            return;
+        }
+
+        if (str_starts_with($value, '/')) {
+            return;
+        }
+
+        $fail('The image must be a valid URL or path.');
+    }
+
     public function index(): JsonResponse
     {
         return response()->json(Category::withTrashed()->with('specs')->orderBy('name')->get());
@@ -24,6 +43,7 @@ class AdminCategoryController extends Controller
             'specs' => 'sometimes|nullable|array',
             'specs.*.key' => 'required_with:specs|string',
             'specs.*.placeholder' => 'sometimes|nullable|string',
+            'image_url' => ['sometimes', fn ($attribute, $value, $fail) => $this->validateImageValue($value, $fail)],
         ]);
 
         $category = Category::create(collect($validated)->except('specs')->toArray());
@@ -55,6 +75,7 @@ class AdminCategoryController extends Controller
             'specs' => 'sometimes|nullable|array',
             'specs.*.key' => 'required_with:specs|string',
             'specs.*.placeholder' => 'sometimes|nullable|string',
+            'image_url' => ['sometimes', fn ($attribute, $value, $fail) => $this->validateImageValue($value, $fail)],
         ]);
 
         $category = Category::findOrFail($id);

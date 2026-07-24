@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Str;
 
 class Product extends Model
@@ -39,6 +39,7 @@ class Product extends Model
         'is_featured',
         'is_active',
         'weight',
+        'condition',
     ];
 
     protected $casts = [
@@ -54,6 +55,7 @@ class Product extends Model
         'is_featured' => 'boolean',
         'is_active' => 'boolean',
         'weight' => 'decimal:2',
+        'condition' => 'string',
     ];
 
     protected $appends = [
@@ -157,6 +159,7 @@ class Product extends Model
                     if (is_string($url) && str_starts_with($url, '/storage/products/')) {
                         return str_replace('/storage/products/', '/api/images/', $url);
                     }
+
                     return $url;
                 }, $images);
             },

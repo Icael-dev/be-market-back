@@ -57,6 +57,7 @@ class AdminProductController extends Controller
             'meta_keywords' => ['nullable', 'string'],
             'is_featured' => ['boolean'],
             'is_active' => ['boolean'],
+            'condition' => ['nullable', 'string', 'in:new,used,refurbished'],
             'weight' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -78,6 +79,7 @@ class AdminProductController extends Controller
 
         $data['is_featured'] = $data['is_featured'] ?? false;
         $data['is_active'] = $data['is_active'] ?? true;
+        $data['condition'] = $data['condition'] ?? 'new';
 
         $product = Product::create($data);
 
@@ -123,6 +125,7 @@ class AdminProductController extends Controller
             'meta_keywords' => ['nullable', 'string'],
             'is_featured' => ['boolean'],
             'is_active' => ['boolean'],
+            'condition' => ['nullable', 'string', 'in:new,used,refurbished'],
             'weight' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -190,5 +193,26 @@ class AdminProductController extends Controller
         return response()->json([
             'url' => Storage::url($path),
         ], 201);
+    }
+
+    public function addStock(Request $request, string $id): JsonResponse
+    {
+        $product = Product::withTrashed()->findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'quantity' => ['required', 'integer', 'min:1'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $quantity = (int) $request->input('quantity');
+        $product->increment('stock', $quantity);
+
+        return response()->json([
+            'message' => 'Stock added successfully.',
+            'product' => $product->fresh(),
+        ]);
     }
 }

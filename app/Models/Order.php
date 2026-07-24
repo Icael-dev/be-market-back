@@ -30,6 +30,9 @@ class Order extends Model
         'shipping_address',
         'billing_address',
         'notes',
+        'loyalty_points_earned',
+        'loyalty_points_redeemed',
+        'loyalty_discount_amount',
     ];
 
     protected $casts = [

@@ -52,6 +52,11 @@ class AuthController extends Controller
         ]);
 
         $token = $user->createToken('api-token')->accessToken;
+        $tokenInstance = $user->tokens()->latest()->first();
+        if ($tokenInstance) {
+            $tokenInstance->expires_at = now()->addDays(7);
+            $tokenInstance->save();
+        }
 
         return $this->authResponse($user, $token, 201);
     }
@@ -73,6 +78,11 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken('api-token')->accessToken;
+        $tokenInstance = $user->tokens()->latest()->first();
+        if ($tokenInstance) {
+            $tokenInstance->expires_at = now()->addDays(7);
+            $tokenInstance->save();
+        }
 
         return $this->authResponse($user, $token);
     }
@@ -105,6 +115,11 @@ class AuthController extends Controller
         $user = $request->user();
         $user->token()?->revoke();
         $token = $user->createToken('api-token')->accessToken;
+        $tokenInstance = $user->tokens()->latest()->first();
+        if ($tokenInstance) {
+            $tokenInstance->expires_at = now()->addDays(7);
+            $tokenInstance->save();
+        }
 
         return $this->authResponse($user, $token);
     }

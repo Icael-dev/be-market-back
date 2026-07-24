@@ -81,6 +81,11 @@ class PaymentController extends Controller
 
     public function callback(Request $request): JsonResponse
     {
+        $secret = env('PAYMENT_CALLBACK_SECRET');
+        if ($secret && $request->header('X-Callback-Secret') !== $secret) {
+            return response()->json(['message' => 'Unauthorized callback.'], 401);
+        }
+
         $data = $request->only(['reference', 'status', 'provider_data']);
 
         $validator = Validator::make($data, [
