@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\AdminCouponController;
 use App\Http\Controllers\Admin\AdminCustomerController;
 use App\Http\Controllers\Admin\AdminFlashSaleController;
 use App\Http\Controllers\Admin\AdminImageController;
+use App\Http\Controllers\Admin\AdminFAQController;
+use App\Http\Controllers\Admin\AdminLegalPageController;
 use App\Http\Controllers\Admin\AdminLoyaltyController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminPaymentController;
@@ -14,6 +16,7 @@ use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminSettingController;
 use App\Http\Controllers\Admin\AdminStatisticsController;
 use App\Http\Controllers\Admin\AdminSupportController;
+use App\Http\Controllers\Admin\AdminTestimonialController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
@@ -43,6 +46,8 @@ Route::prefix('auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->middleware('auth.api');
     Route::get('user', [AuthController::class, 'user'])->middleware('auth.api');
     Route::post('refresh', [AuthController::class, 'refresh'])->middleware('auth.api');
+    Route::post('forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:5,1');
+    Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 });
 
 Route::get('images/{path}', [ImageController::class, 'show'])->where('path', '.*');
@@ -65,11 +70,13 @@ Route::post('stock-notifications', [PublicController::class, 'stockNotifications
 Route::get('reviews', [ReviewController::class, 'index']);
 Route::get('testimonials', [TestimonialController::class, 'index']);
 
+// Payment webhook callback — public, secured by X-Callback-Secret header
+Route::post('payment/callback', [PaymentController::class, 'callback']);
+
 Route::middleware('auth.api')->group(function () {
     Route::get('payment/history', [PaymentController::class, 'index']);
     Route::post('payment/initiate', [PaymentController::class, 'store']);
     Route::get('payment/verify/{id}', [PaymentController::class, 'verify']);
-    Route::post('payment/callback', [PaymentController::class, 'callback']);
 });
 
 Route::middleware('auth.api')->group(function () {
@@ -107,7 +114,7 @@ Route::middleware('auth.api')->group(function () {
     Route::get('loyalty/transactions', [LoyaltyController::class, 'transactions']);
 });
 
-Route::middleware(['auth.api', 'admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth.api', 'admin', 'throttle:120,1'])->prefix('admin')->group(function () {
     Route::apiResource('products', AdminProductController::class);
     Route::post('products/{id}/restore', [AdminProductController::class, 'restore']);
     Route::post('products/upload-image', [AdminProductController::class, 'uploadImage']);
@@ -132,6 +139,9 @@ Route::middleware(['auth.api', 'admin'])->prefix('admin')->group(function () {
     Route::get('support/tickets/{id}', [AdminSupportController::class, 'show']);
     Route::put('support/tickets/{id}', [AdminSupportController::class, 'update']);
     Route::post('support/tickets/{id}/messages', [AdminSupportController::class, 'storeMessage']);
+    Route::apiResource('testimonials', AdminTestimonialController::class);
+    Route::apiResource('faqs', AdminFAQController::class);
+    Route::apiResource('legal-pages', AdminLegalPageController::class);
     Route::get('statistics', [AdminStatisticsController::class, 'index']);
     Route::get('statistics/top-products', [AdminStatisticsController::class, 'topProducts']);
     Route::get('statistics/low-stock', [AdminStatisticsController::class, 'lowStock']);
@@ -141,7 +151,7 @@ Route::middleware(['auth.api', 'admin'])->prefix('admin')->group(function () {
 });
 
 // Super-admin only: coupons, flash sales, settings and staff/user management.
-Route::middleware(['auth.api', 'admin.super'])->prefix('admin')->group(function () {
+Route::middleware(['auth.api', 'admin.super', 'throttle:60,1'])->prefix('admin')->group(function () {
     Route::apiResource('coupons', AdminCouponController::class);
     Route::apiResource('flash-sales', AdminFlashSaleController::class);
     Route::get('settings', [AdminSettingController::class, 'index']);

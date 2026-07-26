@@ -11,6 +11,7 @@ use App\Models\LoyaltyTransaction;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Services\CouponService;
+use App\Support\StoreSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -78,6 +79,14 @@ class OrderController extends Controller
         $loyaltyDiscount = 0;
         $loyaltyPointsRedeemed = 0;
         $requestedPoints = (int) ($data['loyalty_points_to_redeem'] ?? 0);
+
+        $threshold = (int) StoreSettings::resolve()['loyalty_points_threshold'];
+        if ($threshold > 0 && ($subtotal - $discount) < $threshold) {
+            return response()->json([
+                'message' => "Un seuil de depense de {$threshold} FCFA est requis pour utiliser vos points."
+            ], 422);
+        }
+
         if ($requestedPoints > 0) {
             $loyaltyPoints = LoyaltyPoints::firstOrCreate(
                 ['user_id' => $userId],
@@ -170,7 +179,7 @@ class OrderController extends Controller
                 );
                 $loyalty->points += $pointsEarned;
                 $loyalty->total_earned += $pointsEarned;
-                $loyalty->points_expire_at = now()->addMonths(12);
+                $loyalty->points_expire_at = now()->addMonths(6);
                 $loyalty->save();
 
                 LoyaltyTransaction::create([

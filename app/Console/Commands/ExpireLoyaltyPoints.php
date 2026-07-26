@@ -11,7 +11,7 @@ class ExpireLoyaltyPoints extends Command
 {
     protected $signature = 'loyalty:expire 
                             {--dry-run : Show what would be expired without making changes}
-                            {--months=12 : Number of months after which points expire}';
+                            {--months=6 : Number of months after which points expire}';
 
     protected $description = 'Expire loyalty points that have reached their expiration date';
 
@@ -51,7 +51,7 @@ class ExpireLoyaltyPoints extends Command
                     'user_id' => $loyalty->user_id,
                     'type' => 'expired',
                     'points' => -$pointsToExpire,
-                    'description' => "Expiration de {$pointsToExpire} points après " . now()->subMonths(12)->format('Y-m-d'),
+                    'description' => "Expiration de {$pointsToExpire} points après " . now()->subMonths(6)->format('Y-m-d'),
                 ]);
             });
 

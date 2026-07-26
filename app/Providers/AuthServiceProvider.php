@@ -25,5 +25,10 @@ class AuthServiceProvider extends ServiceProvider
 
         Passport::tokensExpireIn(now()->addDays(7));
         Passport::refreshTokensExpireIn(now()->addDays(14));
+
+        // Passport::routes() is intentionally not called.
+        // This SPA obtains tokens directly via /auth/login and /auth/register
+        // (server-side token creation), so the OAuth authorization endpoints
+        // (authorization code / PKCE flows) are not needed.
     }
 }

@@ -14,6 +14,7 @@ class StoreSettings
         'store_name' => 'BE-Market',
         'store_email' => 'contact@be-market.tg',
         'store_phone' => '',
+        'loyalty_points_threshold' => 0,
     ];
 
     private const KEY_ALIASES = [
