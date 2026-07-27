@@ -50,7 +50,8 @@ Route::prefix('auth')->group(function () {
     Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 });
 
-Route::get('images/{path}', [ImageController::class, 'show'])->where('path', '.*');
+Route::get('images/{folder}/{path}', [ImageController::class, 'show'])
+    ->where(['folder' => 'products|banners|blog', 'path' => '.*']);
 
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('products', [ProductController::class, 'index']);

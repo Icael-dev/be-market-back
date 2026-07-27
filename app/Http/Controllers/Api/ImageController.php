@@ -9,9 +9,19 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ImageController extends Controller
 {
-    public function show(string $path, Request $request): StreamedResponse
+    private const ALLOWED_FOLDERS = ['products', 'banners', 'blog'];
+
+    public function show(string $folder, string $path, Request $request): StreamedResponse
     {
-        $fullPath = "products/{$path}";
+        if (! in_array($folder, self::ALLOWED_FOLDERS, true)) {
+            abort(404);
+        }
+
+        if ($this->isPathTraversal($path)) {
+            abort(404);
+        }
+
+        $fullPath = "{$folder}/{$path}";
 
         if (! Storage::disk('public')->exists($fullPath)) {
             abort(404);
@@ -27,5 +37,33 @@ class ImageController extends Controller
             'Content-Type' => $mime,
             'Cache-Control' => 'public, max-age=31536000',
         ]);
+    }
+
+    private function isPathTraversal(string $path): bool
+    {
+        if ($path === '' || $path[0] === '/' || $path[0] === '\\') {
+            return true;
+        }
+
+        if (str_contains($path, '\\')) {
+            return true;
+        }
+
+        if (str_contains($path, '..')) {
+            return true;
+        }
+
+        if (str_contains($path, "\0")) {
+            return true;
+        }
+
+        $segments = explode('/', $path);
+        foreach ($segments as $segment) {
+            if ($segment === '..') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
