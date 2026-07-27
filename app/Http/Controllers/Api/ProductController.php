@@ -86,10 +86,10 @@ class ProductController extends Controller
         }
 
         if ($request->filled('page')) {
-            return response()->json($query->paginate((int) $request->query('per_page', 20)));
+            return response()->json($query->paginate((int) $request->query('per_page', 10)));
         }
 
-        return response()->json($query->get());
+        return response()->json(['data' => $query->get(), 'meta' => ['current_page' => 1, 'last_page' => 1, 'per_page' => $query->count(), 'total' => $query->count()]]);
     }
 
     public function priceBounds(Request $request): JsonResponse

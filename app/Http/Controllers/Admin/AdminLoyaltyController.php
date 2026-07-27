@@ -23,11 +23,11 @@ class AdminLoyaltyController extends Controller
             $query->where('type', $request->input('type'));
         }
 
-        return response()->json($query->get());
+        return response()->json($query->paginate((int) $request->query('per_page', 10)));
     }
 
     public function points(): JsonResponse
     {
-        return response()->json(LoyaltyPoints::with('user')->orderBy('points', 'desc')->get());
+        return response()->json(LoyaltyPoints::with('user')->orderBy('points', 'desc')->paginate((int) request()->query('per_page', 10)));
     }
 }

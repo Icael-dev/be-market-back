@@ -21,7 +21,7 @@ class AdminOrderController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        return response()->json($query->get());
+        return response()->json($query->paginate((int) $request->query('per_page', 10)));
     }
 
     public function update(Request $request, string $id): JsonResponse

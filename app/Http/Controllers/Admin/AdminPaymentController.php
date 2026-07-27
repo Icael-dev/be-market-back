@@ -25,6 +25,6 @@ class AdminPaymentController extends Controller
             $query->where('user_id', $request->input('user_id'));
         }
 
-        return response()->json($query->get());
+        return response()->json($query->paginate((int) $request->query('per_page', 10)));
     }
 }

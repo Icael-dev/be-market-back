@@ -23,7 +23,7 @@ class AdminSupportController extends Controller
             $query->where('priority', $request->input('priority'));
         }
 
-        return response()->json($query->get());
+        return response()->json($query->paginate((int) $request->query('per_page', 10)));
     }
 
     public function show(string $id): JsonResponse

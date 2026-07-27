@@ -25,7 +25,7 @@ class AdminCustomerController extends Controller
             $query->where('email', 'like', '%'.$request->input('email').'%');
         }
 
-        $customers = $query->get()->map(function (User $user) {
+        $customers = $query->paginate((int) $request->query('per_page', 10))->map(function (User $user) {
             $profile = $user->profile;
 
             return [
