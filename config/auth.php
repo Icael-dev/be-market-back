@@ -48,6 +48,8 @@ return [
         ],
     ],
 
+    'cookie_domain' => env('AUTH_COOKIE_DOMAIN', null),
+
     /*
     |--------------------------------------------------------------------------
     | User Providers

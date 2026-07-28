@@ -11,7 +11,7 @@ trait FormatsAuthResponse
     {
         $user->load('profile');
 
-        return response()->json([
+        $response = response()->json([
             'token' => $token,
             'user' => [
                 'id' => $user->id,
@@ -21,6 +21,8 @@ trait FormatsAuthResponse
             ],
             'profile' => $user->profile,
         ], $status);
+
+        return $this->withAuthCookie($response, $token);
     }
 
     protected function currentUserResponse(User $user): JsonResponse
@@ -36,5 +38,25 @@ trait FormatsAuthResponse
             ],
             'profile' => $user->profile,
         ]);
+    }
+
+    protected function withAuthCookie(JsonResponse $response, string $token): JsonResponse
+    {
+        $domain = config('auth.cookie_domain', null);
+
+        $response->headers->setCookie(
+            cookie(
+                name: 'be_market_token',
+                value: $token,
+                minutes: 60 * 24 * 7,
+                path: '/',
+                domain: $domain,
+                secure: config('app.env') === 'production',
+                httpOnly: true,
+                sameSite: 'lax'
+            )
+        );
+
+        return $response;
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\AuthFromCookie;
 use App\Http\Middleware\AuthenticateApi;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Middleware\SecurityHeaders;
@@ -32,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminMiddleware::class,
             'admin.super' => SuperAdminMiddleware::class,
             'auth.api' => AuthenticateApi::class,
+            'auth.from_cookie' => AuthFromCookie::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -29,7 +29,7 @@ class AuthController extends Controller
         ], [
             'full_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', 'min:8', 'regex:/[A-Z]/', 'regex:/[a-z]/', 'regex:/[0-9]/'],
         ]);
 
         if ($validator->fails()) {
@@ -76,9 +76,12 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->input('email'))->first();
+
         if (! $user || ! Hash::check($request->input('password'), $user->password)) {
             return response()->json(['message' => 'Invalid credentials.'], 401);
         }
+
+        $user->tokens()->delete();
 
         $token = $user->createToken('api-token')->accessToken;
         $tokenInstance = $user->tokens()->latest()->first();
@@ -97,7 +100,22 @@ class AuthController extends Controller
             $token->revoke();
         }
 
-        return response()->json(['message' => 'Logged out successfully.']);
+        $response = response()->json(['message' => 'Logged out successfully.']);
+
+        $domain = config('auth.cookie_domain', null);
+
+        $response->headers->setCookie(cookie(
+            name: 'be_market_token',
+            value: '',
+            minutes: 5,
+            path: '/',
+            domain: $domain,
+            secure: config('app.env') === 'production',
+            httpOnly: true,
+            sameSite: 'lax'
+        ));
+
+        return $response;
     }
 
     public function user(Request $request): JsonResponse
@@ -170,7 +188,6 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Si cet email existe, un lien de reinitialisation a ete envoye.',
-            'reset_url' => $resetUrl, // Only in dev mode
         ]);
     }
 
