@@ -281,4 +281,95 @@ class AdminStatisticsController extends Controller
 
         return response()->json($categorySales);
     }
+
+    public function newCustomers(Request $request): JsonResponse
+    {
+        $limit = max(1, min((int) $request->query('limit', 5), 20));
+
+        $customers = Profile::query()
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get(['id', 'full_name', 'email', 'phone', 'created_at']);
+
+        return response()->json($customers);
+    }
+
+    public function topCustomers(Request $request): JsonResponse
+    {
+        $limit = max(1, min((int) $request->query('limit', 5), 20));
+
+        $customers = Order::query()
+            ->where('payment_status', 'paid')
+            ->select('user_id')
+            ->selectRaw('SUM(total) as total_spent')
+            ->selectRaw('COUNT(*) as orders_count')
+            ->groupBy('user_id')
+            ->orderByDesc('total_spent')
+            ->limit($limit)
+            ->get()
+            ->map(function ($row) {
+                $profile = Profile::find($row->user_id);
+                return [
+                    'user_id' => $row->user_id,
+                    'name' => $profile?->full_name ?? '—',
+                    'email' => $profile?->email ?? '—',
+                    'total_spent' => (float) $row->total_spent,
+                    'orders_count' => (int) $row->orders_count,
+                ];
+            })
+            ->values();
+
+        return response()->json($customers);
+    }
+
+    public function unsoldProducts(Request $request): JsonResponse
+    {
+        $limit = max(1, min((int) $request->query('limit', 5), 50));
+
+        $soldProductIds = OrderItem::select('product_id')->distinct()->pluck('product_id');
+
+        $products = Product::query()
+            ->whereNotIn('id', $soldProductIds)
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get(['id', 'name', 'sku', 'stock', 'price']);
+
+        return response()->json($products);
+    }
+
+    public function failedPayments(Request $request): JsonResponse
+    {
+        $limit = max(1, min((int) $request->query('limit', 5), 50));
+
+        $orders = Order::query()
+            ->whereIn('payment_status', ['failed', 'cancelled', 'refunded'])
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get(['id', 'order_number', 'status', 'payment_status', 'payment_method', 'total', 'created_at']);
+
+        return response()->json($orders);
+    }
+
+    public function deliveryStats(Request $request): JsonResponse
+    {
+        $start = now()->subDays(30)->startOfDay();
+        $end = now()->endOfDay();
+
+        $statusStats = Order::query()
+            ->selectRaw('status, COUNT(*) as value')
+            ->whereBetween('created_at', [$start, $end])
+            ->groupBy('status')
+            ->get()
+            ->map(fn ($row) => ['name' => ucfirst((string) $row->status), 'value' => (int) $row->value])
+            ->values();
+
+        $avgShippingFee = (float) Order::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->avg('shipping_fee');
+
+        return response()->json([
+            'status_stats' => $statusStats,
+            'avg_shipping_fee' => round($avgShippingFee, 2),
+        ]);
+    }
 }

@@ -2,22 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Concerns\FormatsAuthResponse;
 use App\Http\Controllers\Controller;
-use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    use FormatsAuthResponse;
-
     public function register(Request $request): JsonResponse
     {
         $fullName = $request->input('full_name') ?? $request->input('name');
@@ -44,24 +38,17 @@ class AuthController extends Controller
             'role' => User::ROLE_CLIENT,
         ]);
 
-        Profile::create([
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'full_name' => $fullName,
-            'phone' => null,
-            'avatar_url' => null,
-            'is_admin' => false,
-            'role' => User::ROLE_CLIENT,
-        ]);
+        Auth::login($user);
 
-        $token = $user->createToken('api-token')->accessToken;
-        $tokenInstance = $user->tokens()->latest()->first();
-        if ($tokenInstance) {
-            $tokenInstance->expires_at = now()->addDays(7);
-            $tokenInstance->save();
-        }
-
-        return $this->authResponse($user, $token, 201);
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'email' => $user->email,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+            ],
+            'profile' => null,
+        ], 201);
     }
 
     public function login(Request $request): JsonResponse
@@ -81,68 +68,61 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials.'], 401);
         }
 
-        $user->tokens()->delete();
+        Auth::login($user);
 
-        $token = $user->createToken('api-token')->accessToken;
-        $tokenInstance = $user->tokens()->latest()->first();
-        if ($tokenInstance) {
-            $tokenInstance->expires_at = now()->addDays(7);
-            $tokenInstance->save();
-        }
-
-        return $this->authResponse($user, $token);
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'email' => $user->email,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+            ],
+            'profile' => null,
+        ]);
     }
 
     public function logout(Request $request): JsonResponse
     {
-        $token = $request->user()->token();
-        if ($token) {
-            $token->revoke();
-        }
+        Auth::logout();
 
-        $response = response()->json(['message' => 'Logged out successfully.']);
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        $domain = config('auth.cookie_domain', null);
-
-        $response->headers->setCookie(cookie(
-            name: 'be_market_token',
-            value: '',
-            minutes: 5,
-            path: '/',
-            domain: $domain,
-            secure: config('app.env') === 'production',
-            httpOnly: true,
-            sameSite: 'lax'
-        ));
-
-        return $response;
+        return response()->json(['message' => 'Logged out successfully.']);
     }
 
     public function user(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        // Quand le token est absent/invalid, auth:api doit normalement renvoyer 401,
-        // mais on évite ici tout crash éventuel et on répond proprement.
         if (! $user) {
             return response()->json(['user' => null, 'profile' => null], 401);
         }
 
-        return $this->currentUserResponse($user);
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'email' => $user->email,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+            ],
+            'profile' => $user->profile,
+        ]);
     }
 
     public function refresh(Request $request): JsonResponse
     {
         $user = $request->user();
-        $user->token()?->revoke();
-        $token = $user->createToken('api-token')->accessToken;
-        $tokenInstance = $user->tokens()->latest()->first();
-        if ($tokenInstance) {
-            $tokenInstance->expires_at = now()->addDays(7);
-            $tokenInstance->save();
-        }
 
-        return $this->authResponse($user, $token);
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'email' => $user->email,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+            ],
+            'profile' => $user->profile,
+        ]);
     }
 
     public function sendResetLink(Request $request): JsonResponse

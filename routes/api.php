@@ -36,16 +36,12 @@ use App\Http\Controllers\Api\TestimonialController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('login', function () {
-    return response()->json(['message' => 'Unauthenticated.'], 401);
-});
-
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register'])->middleware('throttle:10,1');
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
-    Route::post('logout', [AuthController::class, 'logout'])->middleware(['auth.from_cookie', 'auth.api']);
-    Route::get('user', [AuthController::class, 'user'])->middleware(['auth.from_cookie', 'auth.api']);
-    Route::post('refresh', [AuthController::class, 'refresh'])->middleware(['auth.from_cookie', 'auth.api']);
+    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::get('user', [AuthController::class, 'user'])->middleware('auth:sanctum');
+    Route::post('refresh', [AuthController::class, 'refresh'])->middleware('auth:sanctum');
     Route::post('forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:5,1');
     Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 });
@@ -74,13 +70,13 @@ Route::get('testimonials', [TestimonialController::class, 'index']);
 // Payment webhook callback — public, secured by X-Callback-Secret header
 Route::post('payment/callback', [PaymentController::class, 'callback']);
 
-Route::middleware(['auth.from_cookie', 'auth.api'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('payment/history', [PaymentController::class, 'index']);
     Route::post('payment/initiate', [PaymentController::class, 'store']);
     Route::get('payment/verify/{id}', [PaymentController::class, 'verify']);
 });
 
-Route::middleware(['auth.from_cookie', 'auth.api'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
 
@@ -115,7 +111,7 @@ Route::middleware(['auth.from_cookie', 'auth.api'])->group(function () {
     Route::get('loyalty/transactions', [LoyaltyController::class, 'transactions']);
 });
 
-Route::middleware(['auth.from_cookie', 'auth.api', 'admin', 'throttle:120,1'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'admin', 'throttle:120,1'])->prefix('admin')->group(function () {
     Route::apiResource('products', AdminProductController::class);
     Route::post('products/{id}/restore', [AdminProductController::class, 'restore']);
     Route::post('products/upload-image', [AdminProductController::class, 'uploadImage']);
@@ -148,11 +144,15 @@ Route::middleware(['auth.from_cookie', 'auth.api', 'admin', 'throttle:120,1'])->
     Route::get('statistics/low-stock', [AdminStatisticsController::class, 'lowStock']);
     Route::get('statistics/coupons', [AdminStatisticsController::class, 'couponStats']);
     Route::get('statistics/category-sales', [AdminStatisticsController::class, 'categorySales']);
+    Route::get('statistics/new-customers', [AdminStatisticsController::class, 'newCustomers']);
+    Route::get('statistics/top-customers', [AdminStatisticsController::class, 'topCustomers']);
+    Route::get('statistics/unsold-products', [AdminStatisticsController::class, 'unsoldProducts']);
+    Route::get('statistics/failed-payments', [AdminStatisticsController::class, 'failedPayments']);
     Route::get('export', [AdminStatisticsController::class, 'export']);
 });
 
 // Super-admin only: coupons, flash sales, settings and staff/user management.
-Route::middleware(['auth.from_cookie', 'auth.api', 'admin.super', 'throttle:60,1'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'admin.super', 'throttle:60,1'])->prefix('admin')->group(function () {
     Route::apiResource('coupons', AdminCouponController::class);
     Route::apiResource('flash-sales', AdminFlashSaleController::class);
     Route::get('settings', [AdminSettingController::class, 'index']);

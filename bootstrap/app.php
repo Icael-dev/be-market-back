@@ -1,15 +1,14 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
-use App\Http\Middleware\AuthFromCookie;
-use App\Http\Middleware\AuthenticateApi;
+use App\Http\Middleware\AdminSuperAdminMiddleware;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Middleware\SecurityHeaders;
-use App\Http\Middleware\SuperAdminMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 if (function_exists('ini_set')) {
     ini_set('upload_max_filesize', '12M');
@@ -29,11 +28,14 @@ return Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
         ]);
 
+        $middleware->appendToGroup('api', [
+            EnsureFrontendRequestsAreStateful::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
+
         $middleware->alias([
             'admin' => AdminMiddleware::class,
-            'admin.super' => SuperAdminMiddleware::class,
-            'auth.api' => AuthenticateApi::class,
-            'auth.from_cookie' => AuthFromCookie::class,
+            'admin.super' => AdminSuperAdminMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
