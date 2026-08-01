@@ -151,10 +151,14 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:120,1'])->prefix('admin')-
     Route::get('export', [AdminStatisticsController::class, 'export']);
 });
 
-// Super-admin only: coupons, flash sales, settings and staff/user management.
-Route::middleware(['auth:sanctum', 'admin.super', 'throttle:60,1'])->prefix('admin')->group(function () {
+// Admin/staff access: coupons, flash sales
+Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->group(function () {
     Route::apiResource('coupons', AdminCouponController::class);
     Route::apiResource('flash-sales', AdminFlashSaleController::class);
+});
+
+// Super-admin only: settings and staff/user management.
+Route::middleware(['auth:sanctum', 'admin.super', 'throttle:60,1'])->prefix('admin')->group(function () {
     Route::get('settings', [AdminSettingController::class, 'index']);
     Route::put('settings', [AdminSettingController::class, 'update']);
     Route::get('users', [AdminUserController::class, 'index']);
