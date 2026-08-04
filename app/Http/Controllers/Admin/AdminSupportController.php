@@ -23,6 +23,16 @@ class AdminSupportController extends Controller
             $query->where('priority', $request->input('priority'));
         }
 
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('subject', 'ilike', "%{$search}%")
+                    ->orWhereHas('user', function ($q) use ($search) {
+                        $q->where('email', 'ilike', "%{$search}%");
+                    });
+            });
+        }
+
         return response()->json($query->paginate((int) $request->query('per_page', 10)));
     }
 

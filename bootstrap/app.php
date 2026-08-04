@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AdminSuperAdminMiddleware;
+use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => AdminMiddleware::class,
             'admin.super' => AdminSuperAdminMiddleware::class,
+            'auth' => Authenticate::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
