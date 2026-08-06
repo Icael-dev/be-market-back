@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\LoyaltyPoints;
 use App\Models\LoyaltyTransaction;
@@ -92,7 +93,7 @@ class AdminOrderController extends Controller
             CouponUsage::where('order_id', $order->id)->delete();
 
             if ($order->discount > 0) {
-                \App\Models\Coupon::whereHas('usages', function ($q) use ($order) {
+                Coupon::whereHas('usages', function ($q) use ($order) {
                     $q->where('order_id', $order->id);
                 })->decrement('uses_count');
             }

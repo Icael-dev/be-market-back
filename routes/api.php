@@ -5,9 +5,9 @@ use App\Http\Controllers\Admin\AdminBlogController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminCouponController;
 use App\Http\Controllers\Admin\AdminCustomerController;
+use App\Http\Controllers\Admin\AdminFAQController;
 use App\Http\Controllers\Admin\AdminFlashSaleController;
 use App\Http\Controllers\Admin\AdminImageController;
-use App\Http\Controllers\Admin\AdminFAQController;
 use App\Http\Controllers\Admin\AdminLegalPageController;
 use App\Http\Controllers\Admin\AdminLoyaltyController;
 use App\Http\Controllers\Admin\AdminOrderController;
@@ -70,7 +70,7 @@ Route::get('testimonials', [TestimonialController::class, 'index']);
 // Payment webhook callback — public, secured by X-Callback-Secret header
 Route::post('payment/callback', [PaymentController::class, 'callback']);
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:10,1'])->group(function () {
     Route::get('payment/history', [PaymentController::class, 'index']);
     Route::post('payment/initiate', [PaymentController::class, 'store']);
     Route::get('payment/verify/{id}', [PaymentController::class, 'verify']);

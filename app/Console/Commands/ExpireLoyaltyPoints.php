@@ -40,6 +40,7 @@ class ExpireLoyaltyPoints extends Command
             if ($dryRun) {
                 $this->line("[DRY RUN] Would expire {$pointsToExpire} points for user {$loyalty->user_id}");
                 $totalExpired += $pointsToExpire;
+
                 continue;
             }
 
@@ -51,7 +52,7 @@ class ExpireLoyaltyPoints extends Command
                     'user_id' => $loyalty->user_id,
                     'type' => 'expired',
                     'points' => -$pointsToExpire,
-                    'description' => "Expiration de {$pointsToExpire} points après " . now()->subMonths(6)->format('Y-m-d'),
+                    'description' => "Expiration de {$pointsToExpire} points après ".now()->subMonths(6)->format('Y-m-d'),
                 ]);
             });
 

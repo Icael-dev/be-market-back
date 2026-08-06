@@ -154,7 +154,7 @@ class AdminStatisticsController extends Controller
             fputcsv($output, $headers);
 
             $query->lazyById(500)->each(function ($row) use ($output, $columns) {
-                $values = array_map(fn ($col) => $this->formatValue($row, $col), $columns);
+                $values = array_map([self::class, 'formatValue'], $row, $columns);
                 fputcsv($output, $values);
             });
 
@@ -167,7 +167,7 @@ class AdminStatisticsController extends Controller
     /**
      * @param  object  $row
      */
-    protected function formatValue($row, string $column): string
+    protected static function formatValue($row, string $column): string
     {
         $value = $row->{$column} ?? '';
 
@@ -309,6 +309,7 @@ class AdminStatisticsController extends Controller
             ->get()
             ->map(function ($row) {
                 $profile = Profile::find($row->user_id);
+
                 return [
                     'user_id' => $row->user_id,
                     'name' => $profile?->full_name ?? '—',

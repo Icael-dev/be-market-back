@@ -9,20 +9,11 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
-use Laravel\Passport\Passport;
-use Tests\CreatesPassportClient;
 use Tests\TestCase;
 
 class CheckoutTest extends TestCase
 {
-    use CreatesPassportClient;
     use RefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->createPersonalAccessClient();
-    }
 
     private function makeProduct(int $stock = 5): Product
     {
@@ -51,7 +42,7 @@ class CheckoutTest extends TestCase
         $cart = Cart::create(['user_id' => $user->id]);
         $cart->items()->create(['product_id' => $product->id, 'quantity' => 2]);
 
-        Passport::actingAs($user);
+        $this->actingAs($user);
 
         $response = $this->postJson('/api/checkout', [
             'shipping_address' => [
@@ -85,7 +76,7 @@ class CheckoutTest extends TestCase
             'starts_at' => now()->subDay(),
         ]);
 
-        Passport::actingAs($user);
+        $this->actingAs($user);
 
         $address = [
             'full_name' => 'Jane',
@@ -116,7 +107,7 @@ class CheckoutTest extends TestCase
     {
         $user = User::factory()->create();
         Cart::create(['user_id' => $user->id]);
-        Passport::actingAs($user);
+        $this->actingAs($user);
 
         $this->postJson('/api/checkout', [
             'shipping_address' => [

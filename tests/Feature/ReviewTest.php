@@ -9,20 +9,11 @@ use App\Models\Review;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
-use Laravel\Passport\Passport;
-use Tests\CreatesPassportClient;
 use Tests\TestCase;
 
 class ReviewTest extends TestCase
 {
-    use CreatesPassportClient;
     use RefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->createPersonalAccessClient();
-    }
 
     private function makeProduct(): Product
     {
@@ -48,7 +39,7 @@ class ReviewTest extends TestCase
     {
         $user = User::factory()->create();
         $product = $this->makeProduct();
-        Passport::actingAs($user);
+        $this->actingAs($user);
 
         $response = $this->postJson('/api/reviews', [
             'product_id' => $product->id,
@@ -66,7 +57,7 @@ class ReviewTest extends TestCase
     {
         $user = User::factory()->create();
         $product = $this->makeProduct();
-        Passport::actingAs($user);
+        $this->actingAs($user);
 
         $order = Order::create([
             'id' => (string) Str::uuid(),
@@ -103,7 +94,7 @@ class ReviewTest extends TestCase
     {
         $user = User::factory()->create();
         $product = $this->makeProduct();
-        Passport::actingAs($user);
+        $this->actingAs($user);
 
         $this->postJson('/api/reviews', [
             'product_id' => $product->id,

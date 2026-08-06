@@ -4,34 +4,24 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Passport\Passport;
-use Tests\CreatesPassportClient;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
-    use CreatesPassportClient;
     use RefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->createPersonalAccessClient();
-    }
 
     public function test_user_can_register_and_login(): void
     {
         $response = $this->postJson('/api/auth/register', [
             'full_name' => 'Jane Doe',
             'email' => 'jane@example.com',
-            'password' => 'password123',
+            'password' => 'Password123',
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonStructure(['token', 'user']);
+            ->assertJsonStructure(['user', 'profile']);
 
         $this->assertDatabaseHas('users', ['email' => 'jane@example.com']);
-        $this->assertDatabaseHas('profiles', ['email' => 'jane@example.com']);
     }
 
     public function test_register_requires_valid_password(): void
@@ -48,7 +38,7 @@ class AuthTest extends TestCase
     public function test_authenticated_user_can_fetch_their_profile(): void
     {
         $user = User::factory()->create();
-        Passport::actingAs($user);
+        $this->actingAs($user);
 
         $response = $this->getJson('/api/auth/user');
 

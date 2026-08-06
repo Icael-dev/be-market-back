@@ -16,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
@@ -83,7 +84,7 @@ class OrderController extends Controller
         $threshold = (int) StoreSettings::resolve()['loyalty_points_threshold'];
         if ($threshold > 0 && ($subtotal - $discount) < $threshold) {
             return response()->json([
-                'message' => "Un seuil de depense de {$threshold} FCFA est requis pour utiliser vos points."
+                'message' => "Un seuil de depense de {$threshold} FCFA est requis pour utiliser vos points.",
             ], 422);
         }
 
@@ -110,7 +111,7 @@ class OrderController extends Controller
 
         $order = DB::transaction(function () use ($items, $subtotal, $discount, $shippingFee, $tax, $total, $data, $userId, $paymentMethod, $couponId, $loyaltyDiscount, $loyaltyPointsRedeemed) {
             $order = Order::create([
-                'order_number' => 'ORD-'.strtoupper(uniqid()),
+                'order_number' => 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6)),
                 'user_id' => $userId,
                 'status' => 'processing',
                 'payment_status' => 'pending',

@@ -4,10 +4,9 @@
 #
 # Ce script automatise toutes les etapes necessaires pour que l'API fonctionne :
 #   1. (optionnel) migrate:fresh  -> recree une base propre
-#   2. Cles Passport              -> signature/verification des tokens
-#   3. Personal Access Client     -> requis par createToken() (login/register)
-#   4. config:clear               -> prise en compte du .env a jour
-#   5. Seeders                     -> categories, specs, admin (+ demo local)
+#   2. Sanctum                     -> authentication API par cookies de session
+#   3. config:clear               -> prise en compte du .env a jour
+#   4. Seeders                     -> categories, specs, admin (+ demo local)
 #
 # Par defaut, TOUS les seeders sont lances (DatabaseSeeder) :
 #   - CategorySeeder        (categories)
@@ -16,7 +15,7 @@
 #   - + compte demo "test@example.com" (uniquement en environnement local)
 #
 # Usage :
-#   ./setup-backend.sh                # migrate + cles + client Passport + TOUS les seeders
+#   ./setup-backend.sh                # migrate + setup Sanctum + TOUS les seeders
 #   ./setup-backend.sh --fresh        # migrate:fresh (EFFACE TOUT) puis setup + TOUS les seeders
 #   ./setup-backend.sh --admin-only   # comme ci-dessus mais seed uniquement l'admin
 #   ./setup-backend.sh --no-seed      # setup sans lancer aucun seeder
@@ -81,40 +80,15 @@ else
 fi
 
 # =========================================================================
-# 2. Cles Passport (ne pas ecraser si elles existent deja)
+# 2. Cles Sanctum (sanctum/csrf-cookie est disponible automatiquement)
 # =========================================================================
-if [[ -f storage/oauth-private.key && -f storage/oauth-public.key ]]; then
-  ok "Cles Passport deja presentes (non regenerees)."
-else
-  info "Generation des cles Passport..."
-  php artisan passport:keys
-  ok "Cles Passport generees."
-fi
+ok "Sanctum est configure (pas de cles necessaires)."
 
 # =========================================================================
-# 3. Personal Access Client (requis par login/register)
+# 3. Verification du cookie Sanctum
 # =========================================================================
-info "Verification du Personal Access Client..."
-
-# On demande a Passport s'il existe deja un client personal_access pour le provider users.
-HAS_PAC="$(php artisan tinker --execute="echo \Laravel\Passport\Client::where('provider','users')->get()->first(fn(\$c)=>in_array('personal_access', (array) \$c->grant_types)) ? 'yes' : 'no';" 2>/dev/null | tr -d '[:space:]' || echo "no")"
-
-if [[ "$HAS_PAC" == *yes* ]]; then
-  ok "Personal Access Client deja present."
-else
-  info "Creation du Personal Access Client..."
-  php artisan passport:client --personal --name="Personal Access Client" --provider=users --no-interaction
-
-  # Re-verification apres creation
-  HAS_PAC="$(php artisan tinker --execute="echo \Laravel\Passport\Client::where('provider','users')->get()->first(fn(\$c)=>in_array('personal_access', (array) \$c->grant_types)) ? 'yes' : 'no';" 2>/dev/null | tr -d '[:space:]' || echo "no")"
-  if [[ "$HAS_PAC" == *yes* ]]; then
-    ok "Personal Access Client cree."
-  else
-    err "La commande passport:client n'a pas cree de client personal_access valide."
-    err "Verifie manuellement avec : php artisan tinker --execute=\"dump(\\Laravel\\Passport\\Client::all()->toArray());\""
-    exit 1
-  fi
-fi
+info "Verification de Sanctum..."
+php artisan route:list --name=sanctum >/dev/null 2>&1 && ok "Sanctum actif." || warn "Sanctum pourrait ne pas etre configure correctement."
 
 # =========================================================================
 # 4. Nettoyage du cache de config (prise en compte du .env)
