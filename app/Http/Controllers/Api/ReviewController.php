@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReviewRequest;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class ReviewController extends Controller
@@ -23,20 +23,9 @@ class ReviewController extends Controller
         return response()->json($query->orderBy('created_at', 'desc')->get());
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(ReviewRequest $request): JsonResponse
     {
         $data = $request->only(['product_id', 'rating', 'title', 'comment']);
-
-        $validator = Validator::make($data, [
-            'product_id' => ['required', 'uuid', 'exists:products,id'],
-            'rating' => ['required', 'integer', 'min:1', 'max:5'],
-            'title' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'comment' => ['sometimes', 'nullable', 'string'],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
 
         $product = Product::find($data['product_id']);
         if (! $product) {

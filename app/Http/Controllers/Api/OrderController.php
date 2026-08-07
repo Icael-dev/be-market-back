@@ -3,46 +3,34 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CheckoutRequest;
 use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\LoyaltyPoints;
 use App\Models\LoyaltyTransaction;
-use App\Models\Order;
-use App\Models\OrderItem;
 use App\Services\CouponService;
 use App\Support\StoreSettings;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
     public function __construct(private CouponService $coupons) {}
 
-    public function checkout(Request $request): JsonResponse
+    public function checkout(CheckoutRequest $request): JsonResponse
     {
-        $data = $request->only(['shipping_address', 'billing_address', 'payment_method', 'notes', 'coupon_code', 'loyalty_points_to_redeem']);
-
-        $validator = Validator::make($data, [
-            'shipping_address' => ['required', 'array'],
-            'shipping_address.full_name' => ['required', 'string'],
-            'shipping_address.phone' => ['required', 'string'],
-            'shipping_address.address_line1' => ['required', 'string'],
-            'shipping_address.city' => ['required', 'string'],
-            'shipping_address.country' => ['required', 'string'],
-            'billing_address' => ['sometimes', 'nullable', 'array'],
-            'payment_method' => ['sometimes', 'nullable', 'string', 'in:tmoney,flooz,cash_on_delivery'],
-            'notes' => ['sometimes', 'nullable', 'string'],
-            'coupon_code' => ['sometimes', 'nullable', 'string'],
-            'loyalty_points_to_redeem' => ['sometimes', 'nullable', 'integer', 'min:0'],
+        $data = $request->only([
+            'shipping_address',
+            'billing_address',
+            'payment_method',
+            'notes',
+            'coupon_code',
+            'loyalty_points_to_redeem',
         ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
 
         $cart = Cart::where('user_id', $request->user()->id)->first();
         if (! $cart) {

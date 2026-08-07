@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PaymentRequest;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
@@ -21,19 +22,9 @@ class PaymentController extends Controller
         return response()->json($payments);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(PaymentRequest $request): JsonResponse
     {
         $data = $request->only(['order_id', 'payment_method', 'phone_number']);
-
-        $validator = Validator::make($data, [
-            'order_id' => ['required', 'uuid', 'exists:orders,id'],
-            'payment_method' => ['required', 'in:tmoney,flooz,cash_on_delivery'],
-            'phone_number' => ['nullable', 'string'],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
 
         $order = Order::where('user_id', $request->user()->id)
             ->where('id', $data['order_id'])

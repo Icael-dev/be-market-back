@@ -13,15 +13,26 @@ use App\Models\Product;
 use App\Models\StockNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class PublicController extends Controller
 {
     public function banners(Request $request): JsonResponse
     {
-        return response()->json(
-            Banner::where('is_active', true)->orderBy('sort_order')->get()
-        );
+        try {
+            $banners = Cache::remember('banners.active', 3600, function () {
+                return Banner::where('is_active', true)->orderBy('sort_order')->get();
+            });
+        } catch (\Throwable $e) {
+            $banners = Banner::where('is_active', true)->orderBy('sort_order')->get();
+        }
+
+        if (! $banners instanceof \Illuminate\Support\Collection) {
+            $banners = Banner::where('is_active', true)->orderBy('sort_order')->get();
+        }
+
+        return response()->json($banners);
     }
 
     public function blog(Request $request): JsonResponse
@@ -59,7 +70,19 @@ class PublicController extends Controller
 
     public function faqs(): JsonResponse
     {
-        return response()->json(FAQ::where('is_active', true)->orderBy('sort_order')->get());
+        try {
+            $faqs = Cache::remember('faqs.active', 3600, function () {
+                return FAQ::where('is_active', true)->orderBy('sort_order')->get();
+            });
+        } catch (\Throwable $e) {
+            $faqs = FAQ::where('is_active', true)->orderBy('sort_order')->get();
+        }
+
+        if (! $faqs instanceof \Illuminate\Support\Collection) {
+            $faqs = FAQ::where('is_active', true)->orderBy('sort_order')->get();
+        }
+
+        return response()->json($faqs);
     }
 
     public function legalPages(): JsonResponse
