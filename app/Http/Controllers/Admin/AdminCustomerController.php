@@ -25,11 +25,23 @@ class AdminCustomerController extends Controller
             $query->where('email', 'like', '%'.$request->input('email').'%');
         }
 
-        $customers = $query->paginate((int) $request->query('per_page', 10))->map(function (User $user) {
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%'.$search.'%')
+                  ->orWhereHas('profile', function ($q2) use ($search) {
+                      $q2->where('full_name', 'like', '%'.$search.'%')
+                         ->orWhere('phone', 'like', '%'.$search.'%');
+                  });
+            });
+        }
+
+        $paginator = $query->paginate((int) $request->query('per_page', 10));
+        $customers = $paginator->getCollection()->map(function (User $user) {
             $profile = $user->profile;
 
             return [
-                'id' => $profile?->id ?? $user->id,
+                'id' => $user->id,
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'full_name' => $profile?->full_name ?? $user->name,
@@ -44,21 +56,50 @@ class AdminCustomerController extends Controller
             ];
         });
 
-        return response()->json($customers);
+        return response()->json([
+            'data' => $customers,
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+        ]);
     }
 
     public function show(string $id): JsonResponse
     {
-        $profile = Profile::with('user')->where('user_id', $id)->firstOrFail();
+        $user = User::with('profile')
+            ->where('role', User::ROLE_CLIENT)
+            ->where('id', $id)
+            ->withCount('orders')
+            ->withSum('orders as total_spent', 'total')
+            ->firstOrFail();
 
-        return response()->json($profile);
+        $profile = $user->profile;
+
+        return response()->json([
+            'id' => $user->id,
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'full_name' => $profile?->full_name ?? $user->name,
+            'phone' => $profile?->phone ?? null,
+            'avatar_url' => $profile?->avatar_url ?? null,
+            'is_admin' => $user->is_admin,
+            'role' => $user->role,
+            'created_at' => $user->created_at,
+            'updated_at' => $user->updated_at,
+            'orders_count' => (int) ($user->orders_count ?? 0),
+            'total_spent' => (float) ($user->total_spent ?? 0),
+        ]);
     }
 
     public function orders(string $id): JsonResponse
     {
-        $profile = Profile::with(['user.orders.items.product', 'user.orders.payments'])->where('user_id', $id)->firstOrFail();
+        $user = User::with('orders.items.product', 'orders.payments')
+            ->where('role', User::ROLE_CLIENT)
+            ->where('id', $id)
+            ->firstOrFail();
 
-        return response()->json($profile->user?->orders ?? []);
+        return response()->json($user->orders);
     }
 
     public function loyalty(string $id): JsonResponse

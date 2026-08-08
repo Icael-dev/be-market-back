@@ -116,6 +116,7 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:120,1'])->prefix('admin')-
     Route::post('products/{id}/restore', [AdminProductController::class, 'restore']);
     Route::post('products/upload-image', [AdminProductController::class, 'uploadImage']);
     Route::post('products/{id}/add-stock', [AdminProductController::class, 'addStock']);
+    Route::get('products/{id}/orders', [AdminProductController::class, 'orders']);
     Route::post('upload-image', [AdminImageController::class, 'upload']);
     Route::apiResource('categories', AdminCategoryController::class);
     Route::post('categories/{id}/restore', [AdminCategoryController::class, 'restore']);

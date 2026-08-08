@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -91,6 +92,18 @@ class AdminProductController extends Controller
         $product = Product::with('category')->findOrFail($id);
 
         return response()->json($product);
+    }
+
+    public function orders(string $id): JsonResponse
+    {
+        $orders = Order::with(['user', 'items.product'])
+            ->whereHas('items', function ($query) use ($id) {
+                $query->where('product_id', $id);
+            })
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json($orders);
     }
 
     public function update(Request $request, string $id): JsonResponse
