@@ -45,4 +45,9 @@ class Coupon extends Model
             }
         });
     }
+
+    public function usages()
+    {
+        return $this->hasMany(CouponUsage::class);
+    }
 }

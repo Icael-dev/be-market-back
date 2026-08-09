@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Support\StoreSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class AdminSettingController extends Controller
 {
@@ -42,6 +43,8 @@ class AdminSettingController extends Controller
             $canonicalKey = $aliases[$key] ?? $key;
             Setting::updateOrCreate(['key' => $canonicalKey], ['value' => $value]);
         }
+
+        Cache::forget('settings.global');
 
         return response()->json(StoreSettings::resolve());
     }

@@ -133,6 +133,6 @@ class PaymentControllerTest extends TestCase
             'payment_method' => 'tmoney',
         ]);
 
-        $response->assertStatus(404);
+        $response->assertStatus(422);
     }
 }

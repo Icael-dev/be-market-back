@@ -89,7 +89,7 @@ class AdminProductController extends Controller
 
     public function show(string $id): JsonResponse
     {
-        $product = Product::with('category')->findOrFail($id);
+        $product = Product::withTrashed()->with('category')->findOrFail($id);
 
         return response()->json($product);
     }

@@ -9,12 +9,13 @@ use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\LoyaltyPoints;
 use App\Models\LoyaltyTransaction;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Services\CouponService;
 use App\Support\StoreSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Support\Str;
 
 class OrderController extends Controller

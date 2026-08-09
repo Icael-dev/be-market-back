@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -23,97 +24,119 @@ class AdminOrderControllerTest extends TestCase
         ]);
     }
 
-    private function makeClient(): User
+    private function makeOrder(string $status = 'pending', string $paymentStatus = 'pending'): Order
     {
-        return User::factory()->create([
-            'role' => User::ROLE_CLIENT,
-            'is_admin' => false,
-        ]);
-    }
-
-    private function makeProduct(): Product
-    {
+        $user = User::factory()->create();
         $category = Category::create([
             'id' => (string) Str::uuid(),
             'name' => 'Phones',
             'slug' => 'phones-'.Str::random(6),
             'is_active' => true,
         ]);
-
-        return Product::create([
+        $product = Product::create([
             'id' => (string) Str::uuid(),
             'category_id' => $category->id,
             'name' => 'Test Product',
             'slug' => 'test-product-'.Str::random(6),
-            'price' => 5000,
+            'price' => 1000,
             'stock' => 10,
             'is_active' => true,
         ]);
-    }
 
-    private function createOrder(User $user): Order
-    {
-        $product = $this->makeProduct();
-        $cart = Cart::create(['user_id' => $user->id]);
-        $cart->items()->create([
-            'product_id' => $product->id,
-            'quantity' => 1,
-        ]);
-
-        return Order::create([
+        $order = Order::create([
             'id' => (string) Str::uuid(),
-            'order_number' => 'ORD-'.strtoupper(Str::random(8)),
             'user_id' => $user->id,
-            'status' => 'pending',
-            'payment_status' => 'pending',
+            'order_number' => 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6)),
+            'status' => $status,
+            'payment_status' => $paymentStatus,
             'payment_method' => 'cash_on_delivery',
-            'subtotal' => 5000,
+            'subtotal' => 1000,
             'discount' => 0,
             'shipping_fee' => 0,
             'tax' => 0,
-            'total' => 5000,
-            'shipping_address' => ['full_name' => 'Jane'],
+            'total' => 1000,
+            'shipping_address' => [
+                'full_name' => 'Test',
+                'phone' => '90000000',
+                'address_line1' => '123 St',
+                'city' => 'Lome',
+                'country' => 'Togo',
+            ],
         ]);
+
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'product_sku' => $product->sku,
+            'price' => 1000,
+            'quantity' => 1,
+            'total' => 1000,
+        ]);
+
+        return $order;
     }
 
     public function test_admin_can_list_orders(): void
     {
         $admin = $this->makeAdmin();
-        $client = $this->makeClient();
-        $this->createOrder($client);
+        $this->makeOrder();
 
         $this->actingAs($admin);
 
         $response = $this->getJson('/api/admin/orders');
 
         $response->assertStatus(200)
-            ->assertJsonCount(1);
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => ['id', 'order_number', 'status', 'payment_status', 'total'],
+                ],
+            ]);
     }
 
     public function test_admin_can_update_order_status(): void
     {
         $admin = $this->makeAdmin();
-        $client = $this->makeClient();
-        $order = $this->createOrder($client);
+        $order = $this->makeOrder('pending');
 
         $this->actingAs($admin);
 
         $response = $this->putJson("/api/admin/orders/{$order->id}", [
-            'status' => 'confirmed',
+            'status' => 'shipped',
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonPath('status', 'confirmed');
+            ->assertJsonPath('status', 'shipped');
     }
 
-    public function test_non_admin_cannot_access_admin_orders(): void
+    public function test_admin_can_cancel_order_and_stock_is_restored(): void
     {
-        $client = $this->makeClient();
-        $this->createOrder($client);
+        $admin = $this->makeAdmin();
+        $order = $this->makeOrder('pending');
+        $product = $order->items->first()->product;
+        $initialStock = $product->stock;
 
-        $this->actingAs($client);
+        $this->actingAs($admin);
 
-        $this->getJson('/api/admin/orders')
-            ->assertStatus(403);
+        $response = $this->putJson("/api/admin/orders/{$order->id}", [
+            'status' => 'cancelled',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', 'cancelled');
+
+        $this->assertEquals($initialStock + 1, $product->fresh()->stock);
+    }
+
+    public function test_admin_can_restore_cancelled_order(): void
+    {
+        $admin = $this->makeAdmin();
+        $order = $this->makeOrder('cancelled');
+
+        $this->actingAs($admin);
+
+        $response = $this->postJson("/api/admin/orders/{$order->id}/restore");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('order.status', 'processing');
     }
 }

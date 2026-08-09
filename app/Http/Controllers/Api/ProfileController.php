@@ -33,6 +33,11 @@ class ProfileController extends Controller
         }
 
         $user = $request->user();
+
+        if (isset($data['email']) && $data['email'] !== $user->email) {
+            $user->email_verified_at = null;
+        }
+
         if (isset($data['full_name'])) {
             $user->name = $data['full_name'];
         }

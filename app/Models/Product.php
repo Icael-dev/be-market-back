@@ -145,24 +145,4 @@ class Product extends Model
             get: fn () => $this->activeFlashDiscount(),
         );
     }
-
-    protected function images(): Attribute
-    {
-        return Attribute::make(
-            get: function ($value) {
-                $images = is_string($value) ? json_decode($value, true) : $value;
-                if (! is_array($images)) {
-                    return [];
-                }
-
-                return array_map(function ($url) {
-                    if (is_string($url) && str_starts_with($url, '/storage/products/')) {
-                        return str_replace('/storage/products/', '/api/images/', $url);
-                    }
-
-                    return $url;
-                }, $images);
-            },
-        );
-    }
 }

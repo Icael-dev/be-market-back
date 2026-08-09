@@ -45,10 +45,66 @@ class AdminOrderController extends Controller
 
     public function restore(string $id): JsonResponse
     {
-        $order = Order::withTrashed()->findOrFail($id);
-        $order->restore();
+        $order = Order::withTrashed()->with('user', 'items.product')->findOrFail($id);
 
-        return response()->json(['message' => 'Order restored.', 'order' => $order->load('user', 'items.product')]);
+        if ($order->status !== 'cancelled') {
+            return response()->json(['message' => 'Only cancelled orders can be restored.'], 422);
+        }
+
+        DB::transaction(function () use ($order) {
+            $order->update(['status' => 'processing']);
+            $order->restore();
+            $this->restoreOrderEffects($order);
+        });
+
+        return response()->json(['message' => 'Order restored.', 'order' => $order->refresh()->load('user', 'items.product')]);
+    }
+
+    private function restoreOrderEffects(Order $order): void
+    {
+        if ($order->loyalty_points_redeemed > 0) {
+            $loyalty = LoyaltyPoints::where('user_id', $order->user_id)->lockForUpdate()->first();
+            if ($loyalty) {
+                $loyalty->points -= $order->loyalty_points_redeemed;
+                $loyalty->total_redeemed += $order->loyalty_points_redeemed;
+                $loyalty->save();
+            }
+
+            LoyaltyTransaction::create([
+                'user_id' => $order->user_id,
+                'order_id' => $order->id,
+                'type' => 'redeemed',
+                'points' => -$order->loyalty_points_redeemed,
+                'description' => 'Rétablissement de l\'utilisation pour la commande '.$order->order_number,
+                'reference' => $order->order_number,
+            ]);
+        }
+
+        if ($order->loyalty_points_earned > 0) {
+            $loyalty = LoyaltyPoints::where('user_id', $order->user_id)->lockForUpdate()->firstOrCreate(
+                ['user_id' => $order->user_id],
+                ['points' => 0, 'total_earned' => 0, 'total_redeemed' => 0]
+            );
+            $loyalty->points += $order->loyalty_points_earned;
+            $loyalty->total_earned += $order->loyalty_points_earned;
+            $loyalty->save();
+
+            LoyaltyTransaction::create([
+                'user_id' => $order->user_id,
+                'order_id' => $order->id,
+                'type' => 'earned',
+                'points' => $order->loyalty_points_earned,
+                'description' => 'Rétablissement des points pour la commande '.$order->order_number,
+                'reference' => $order->order_number,
+            ]);
+        }
+
+        foreach ($order->items as $item) {
+            $product = $item->product;
+            if ($product && $product->stock >= $item->quantity) {
+                $product->decrement('stock', $item->quantity);
+            }
+        }
     }
 
     private function reverseOrderEffects(Order $order): void

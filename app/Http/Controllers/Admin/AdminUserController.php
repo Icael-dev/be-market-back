@@ -7,6 +7,7 @@ use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -44,23 +45,27 @@ class AdminUserController extends Controller
         $data = $validator->validated();
         $isAdmin = in_array($data['role'], User::STAFF_ROLES, true);
 
-        $user = User::create([
-            'name' => $data['full_name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'is_admin' => $isAdmin,
-            'role' => $data['role'],
-        ]);
+        $user = DB::transaction(function () use ($data, $isAdmin) {
+            $user = User::create([
+                'name' => $data['full_name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'is_admin' => $isAdmin,
+                'role' => $data['role'],
+            ]);
 
-        Profile::create([
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'full_name' => $data['full_name'],
-            'phone' => $data['phone'] ?? null,
-            'avatar_url' => null,
-            'is_admin' => $isAdmin,
-            'role' => $data['role'],
-        ]);
+            Profile::create([
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'full_name' => $data['full_name'],
+                'phone' => $data['phone'] ?? null,
+                'avatar_url' => null,
+                'is_admin' => $isAdmin,
+                'role' => $data['role'],
+            ]);
+
+            return $user;
+        });
 
         return response()->json($this->formatUser($user->load('profile')), 201);
     }

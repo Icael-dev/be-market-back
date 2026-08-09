@@ -85,11 +85,21 @@ class ProductController extends Controller
             return response()->json($query->limit((int) $request->query('limit'))->get());
         }
 
+        $perPage = (int) $request->query('per_page', 15);
+        $page = (int) $request->query('page', 1);
+
         if ($request->filled('page')) {
-            return response()->json($query->paginate((int) $request->query('per_page', 15)));
+            return response()->json($query->paginate($perPage));
         }
 
-        return response()->json(['data' => $query->get(), 'meta' => ['current_page' => 1, 'last_page' => 1, 'per_page' => $query->count(), 'total' => $query->count()]]);
+        $products = $query->get();
+        return response()->json([
+            'data' => $products,
+            'current_page' => 1,
+            'last_page' => 1,
+            'per_page' => $products->count(),
+            'total' => $products->count(),
+        ]);
     }
 
     public function priceBounds(Request $request): JsonResponse

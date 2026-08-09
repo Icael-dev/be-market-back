@@ -30,6 +30,9 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         return response()->json([
             'user' => [
@@ -51,6 +54,9 @@ class AuthController extends Controller
         }
 
         Auth::login($user);
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         return response()->json([
             'user' => [
@@ -131,8 +137,7 @@ class AuthController extends Controller
         ]);
 
         // In production, send an email with the reset link.
-        // For now, return the token in the response (development mode).
-        $resetUrl = config('app.frontend_url', 'http://localhost:5173')."/reset-password/{$token}?email=".urlencode($email);
+        // For now, return a generic success message (development mode).
 
         // Attempt to send email if mail is configured
         try {
