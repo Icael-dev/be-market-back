@@ -79,7 +79,8 @@ Route::middleware(['auth:sanctum', 'throttle:10,1'])->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
-
+    Route::post('profile/avatar', [ProfileController::class, 'uploadAvatar']);
+    Route::post('profile/password', [ProfileController::class, 'changePassword']);
     Route::get('addresses', [ProfileController::class, 'addresses']);
     Route::post('addresses', [ProfileController::class, 'storeAddress']);
     Route::put('addresses/{id}', [ProfileController::class, 'updateAddress']);
@@ -94,6 +95,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('checkout', [OrderController::class, 'checkout']);
     Route::get('orders', [OrderController::class, 'index']);
     Route::get('orders/{id}', [OrderController::class, 'show']);
+    Route::post('orders/{id}/cancel', [OrderController::class, 'cancel']);
 
     Route::get('wishlist', [WishlistController::class, 'index']);
     Route::post('wishlist', [WishlistController::class, 'store']);

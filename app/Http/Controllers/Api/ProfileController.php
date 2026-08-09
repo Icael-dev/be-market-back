@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ProfileController extends Controller
@@ -143,5 +145,56 @@ class ProfileController extends Controller
         $address->delete();
 
         return response()->json(['message' => 'Address deleted.']);
+    }
+
+    public function uploadAvatar(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'avatar' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+
+        $user = $request->user();
+        $profile = $user->profile;
+        if ($profile) {
+            $profile->update(['avatar_url' => Storage::url($path)]);
+        } else {
+            $user->profile()->create([
+                'email' => $user->email,
+                'full_name' => $user->name,
+                'phone' => null,
+                'avatar_url' => Storage::url($path),
+            ]);
+        }
+
+        return response()->json(['avatar_url' => Storage::url($path)]);
+    }
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+
+        if (! Hash::check($request->input('current_password'), $user->password)) {
+            return response()->json(['errors' => ['current_password' => ['Le mot de passe actuel est incorrect.']]], 422);
+        }
+
+        $user->password = Hash::make($request->input('password'));
+        $user->save();
+
+        return response()->json(['message' => 'Mot de passe mis à jour.']);
     }
 }

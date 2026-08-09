@@ -217,4 +217,23 @@ class OrderController extends Controller
 
         return response()->json($order);
     }
+
+    public function cancel(Request $request, string $id): JsonResponse
+    {
+        $order = Order::where('user_id', $request->user()->id)
+            ->where('id', $id)
+            ->first();
+        if (! $order) {
+            return response()->json(['message' => 'Order not found.'], 404);
+        }
+
+        if (! in_array($order->status, ['pending', 'confirmed', 'processing'], true)) {
+            return response()->json(['message' => 'Cette commande ne peut plus etre annulee.'], 422);
+        }
+
+        $order->status = 'cancelled';
+        $order->save();
+
+        return response()->json(['message' => 'Commande annulee.', 'order' => $order->load('items.product')]);
+    }
 }
