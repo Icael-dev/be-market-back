@@ -13,7 +13,7 @@ class AdminSuperAdminMiddleware
     {
         $user = $request->user();
 
-        if (! $user || $user->role !== User::ROLE_ADMIN) {
+        if (! $user || $user->role !== User::ROLE_ADMIN || $user->trashed()) {
             return new JsonResponse([
                 'message' => 'Super admin access required.',
             ], 403);

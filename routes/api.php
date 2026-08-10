@@ -62,13 +62,13 @@ Route::get('legal', [PublicController::class, 'legalPages']);
 Route::get('legal/{slug}', [PublicController::class, 'legalPage']);
 Route::get('flash-sales', [PublicController::class, 'flashSales']);
 Route::get('settings', [SettingsController::class, 'index']);
-Route::post('newsletter', [PublicController::class, 'newsletter']);
-Route::post('stock-notifications', [PublicController::class, 'stockNotifications']);
+Route::post('newsletter', [PublicController::class, 'newsletter'])->middleware('throttle:5,1');
+Route::post('stock-notifications', [PublicController::class, 'stockNotifications'])->middleware('throttle:5,1');
 Route::get('reviews', [ReviewController::class, 'index']);
 Route::get('testimonials', [TestimonialController::class, 'index']);
 
 // Payment webhook callback — public, secured by X-Callback-Secret header
-Route::post('payment/callback', [PaymentController::class, 'callback']);
+Route::post('payment/callback', [PaymentController::class, 'callback'])->middleware('throttle:20,1');
 
 Route::middleware(['auth:sanctum', 'throttle:10,1'])->group(function () {
     Route::get('payment/history', [PaymentController::class, 'index']);
@@ -92,7 +92,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('cart/items/{id}', [CartController::class, 'removeItem']);
     Route::delete('cart', [CartController::class, 'clear']);
 
-    Route::post('checkout', [OrderController::class, 'checkout']);
+    Route::post('checkout', [OrderController::class, 'checkout'])->middleware('throttle:5,1');
     Route::get('orders', [OrderController::class, 'index']);
     Route::get('orders/{id}', [OrderController::class, 'show']);
     Route::post('orders/{id}/cancel', [OrderController::class, 'cancel']);
@@ -101,14 +101,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('wishlist', [WishlistController::class, 'store']);
     Route::delete('wishlist/{id}', [WishlistController::class, 'destroy']);
 
-    Route::post('support/tickets', [SupportController::class, 'storeTicket']);
+    Route::post('support/tickets', [SupportController::class, 'storeTicket'])->middleware('throttle:5,1');
     Route::get('support/tickets', [SupportController::class, 'index']);
     Route::get('support/tickets/{id}', [SupportController::class, 'show']);
-    Route::post('support/tickets/{id}/messages', [SupportController::class, 'storeMessage']);
+    Route::post('support/tickets/{id}/messages', [SupportController::class, 'storeMessage'])->middleware('throttle:10,1');
 
-    Route::post('reviews', [ReviewController::class, 'store']);
+    Route::post('reviews', [ReviewController::class, 'store'])->middleware('throttle:10,1');
 
-    Route::post('coupons/validate', [CouponController::class, 'validate']);
+    Route::post('coupons/validate', [CouponController::class, 'validate'])->middleware('throttle:10,1');
     Route::get('loyalty/points', [LoyaltyController::class, 'points']);
     Route::get('loyalty/transactions', [LoyaltyController::class, 'transactions']);
 });

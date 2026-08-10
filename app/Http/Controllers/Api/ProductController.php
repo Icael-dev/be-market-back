@@ -36,11 +36,16 @@ class ProductController extends Controller
         }
 
         if ($request->filled('search')) {
-            $term = '%'.$request->query('search').'%';
+            $term = $request->query('search');
+            if (mb_strlen($term) > 100) {
+                $term = mb_substr($term, 0, 100);
+            }
+            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $term);
+            $like = '%'.$escaped.'%';
             $query->where(fn ($builder) => $builder
-                ->where('name', 'ilike', $term)
-                ->orWhere('description', 'ilike', $term)
-                ->orWhere('sku', 'ilike', $term));
+                ->where('name', 'ilike', $like)
+                ->orWhere('description', 'ilike', $like)
+                ->orWhere('sku', 'ilike', $like));
         }
 
         if ($request->filled('brand')) {

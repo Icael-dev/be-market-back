@@ -5,22 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CheckoutRequest;
 use App\Models\Cart;
-use App\Models\Coupon;
-use App\Models\CouponUsage;
-use App\Models\LoyaltyPoints;
-use App\Models\LoyaltyTransaction;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Services\CouponService;
+use App\Services\OrderService;
 use App\Support\StoreSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
-    public function __construct(private CouponService $coupons) {}
+    public function __construct(private CouponService $coupons, private OrderService $orders) {}
 
     public function checkout(CheckoutRequest $request): JsonResponse
     {
@@ -98,95 +93,16 @@ class OrderController extends Controller
 
         $paymentMethod = $data['payment_method'] ?? 'cash_on_delivery';
 
-        $order = DB::transaction(function () use ($items, $subtotal, $discount, $shippingFee, $tax, $total, $data, $userId, $paymentMethod, $couponId, $loyaltyDiscount, $loyaltyPointsRedeemed) {
-            $order = Order::create([
-                'order_number' => 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6)),
-                'user_id' => $userId,
-                'status' => 'processing',
-                'payment_status' => 'pending',
-                'payment_method' => $paymentMethod,
-                'subtotal' => $subtotal,
-                'discount' => $discount,
-                'shipping_fee' => $shippingFee,
-                'tax' => $tax,
-                'total' => $total,
-                'shipping_address' => $data['shipping_address'],
-                'billing_address' => $data['billing_address'] ?? null,
-                'notes' => $data['notes'] ?? null,
-                'loyalty_points_redeemed' => $loyaltyPointsRedeemed,
-                'loyalty_discount_amount' => $loyaltyDiscount,
-            ]);
-
-            foreach ($items as $item) {
-                $unitPrice = $item->product->effectivePriceValue();
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item->product->id,
-                    'product_name' => $item->product->name,
-                    'product_sku' => $item->product->sku,
-                    'price' => $unitPrice,
-                    'quantity' => $item->quantity,
-                    'total' => round($unitPrice * $item->quantity, 2),
-                ]);
-
-                $product = $item->product->fresh();
-                if (! $product || $product->stock < $item->quantity) {
-                    throw new \RuntimeException('One or more items are no longer available.');
-                }
-                $product->decrement('stock', $item->quantity);
-            }
-
-            if ($couponId) {
-                Coupon::where('id', $couponId)->increment('uses_count');
-                CouponUsage::create([
-                    'coupon_id' => $couponId,
-                    'user_id' => $userId,
-                    'order_id' => $order->id,
-                ]);
-            }
-
-            if ($loyaltyPointsRedeemed > 0) {
-                $loyalty = LoyaltyPoints::where('user_id', $userId)->lockForUpdate()->first();
-                $loyalty->points -= $loyaltyPointsRedeemed;
-                $loyalty->total_redeemed += $loyaltyPointsRedeemed;
-                $loyalty->save();
-
-                LoyaltyTransaction::create([
-                    'user_id' => $userId,
-                    'order_id' => $order->id,
-                    'type' => 'redeemed',
-                    'points' => -$loyaltyPointsRedeemed,
-                    'description' => 'Utilisation lors de la commande '.$order->order_number,
-                    'reference' => $order->order_number,
-                ]);
-            }
-
-            $pointsEarned = (int) floor(($subtotal - $discount - $loyaltyDiscount) / 2500);
-            if ($pointsEarned > 0) {
-                $loyalty = LoyaltyPoints::where('user_id', $userId)->lockForUpdate()->firstOrCreate(
-                    ['user_id' => $userId],
-                    ['points' => 0, 'total_earned' => 0, 'total_redeemed' => 0]
-                );
-                $loyalty->points += $pointsEarned;
-                $loyalty->total_earned += $pointsEarned;
-                $loyalty->points_expire_at = now()->addMonths(6);
-                $loyalty->save();
-
-                LoyaltyTransaction::create([
-                    'user_id' => $userId,
-                    'order_id' => $order->id,
-                    'type' => 'earned',
-                    'points' => $pointsEarned,
-                    'description' => 'Commande '.$order->order_number,
-                    'reference' => $order->order_number,
-                ]);
-
-                $order->loyalty_points_earned = $pointsEarned;
-                $order->save();
-            }
-
-            return $order;
-        });
+        $order = $this->orders->place([
+            'shipping_address' => $data['shipping_address'],
+            'billing_address' => $data['billing_address'] ?? null,
+            'notes' => $data['notes'] ?? null,
+            'payment_method' => $paymentMethod,
+            'shipping_fee' => $shippingFee,
+            'tax' => $tax,
+            'coupon_id' => $couponId,
+            'loyalty_points_redeemed' => $loyaltyPointsRedeemed,
+        ], $request->user(), $cart);
 
         $cart->items()->delete();
 

@@ -33,6 +33,11 @@ class Payment extends Model
         'provider_response' => 'array',
     ];
 
+    protected $hidden = [
+        'phone_number',
+        'provider_response',
+    ];
+
     protected static function booted(): void
     {
         static::creating(function (Payment $payment) {

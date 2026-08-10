@@ -89,4 +89,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(SupportTicket::class);
     }
+
+    public function stockNotifications()
+    {
+        return $this->hasMany(StockNotification::class);
+    }
 }

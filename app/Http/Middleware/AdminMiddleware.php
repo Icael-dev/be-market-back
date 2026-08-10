@@ -12,7 +12,7 @@ class AdminMiddleware
     {
         $user = $request->user();
 
-        if (! $user || ! $user->isStaffMember()) {
+        if (! $user || ! $user->isStaffMember() || $user->trashed()) {
             return new JsonResponse([
                 'message' => 'Admin access required.',
             ], 403);

@@ -1,0 +1,15 @@
+.env
+.env.*
+vendor
+node_modules
+tests
+docs
+storage/*.log
+bootstrap/cache/*.php
+.phpunit.result.cache
+.phpunit.cache
+.idea
+.vscode
+*.swp
+*.swo
+auth.json

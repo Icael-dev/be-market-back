@@ -68,4 +68,9 @@ class Order extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function couponUsages()
+    {
+        return $this->hasMany(CouponUsage::class);
+    }
 }

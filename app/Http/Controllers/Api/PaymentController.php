@@ -26,6 +26,10 @@ class PaymentController extends Controller
     {
         $data = $request->only(['order_id', 'payment_method', 'phone_number']);
 
+        if (app()->environment('production') && env('PAYMENT_SANDBOX', true)) {
+            return response()->json(['message' => 'Payment sandbox is not allowed in production.'], 500);
+        }
+
         $order = Order::where('user_id', $request->user()->id)
             ->where('id', $data['order_id'])
             ->first();
@@ -73,6 +77,11 @@ class PaymentController extends Controller
     public function callback(Request $request): JsonResponse
     {
         $secret = env('PAYMENT_CALLBACK_SECRET');
+
+        if (app()->environment('production') && empty($secret)) {
+            return response()->json(['message' => 'Callback secret not configured.'], 500);
+        }
+
         if ($secret && $request->header('X-Callback-Secret') !== $secret) {
             return response()->json(['message' => 'Unauthorized callback.'], 401);
         }

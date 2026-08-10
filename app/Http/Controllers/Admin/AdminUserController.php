@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AdminUserController extends Controller
 {
@@ -142,6 +143,10 @@ class AdminUserController extends Controller
         }
 
         $user->delete();
+
+        if ($user->isStaffMember()) {
+            PersonalAccessToken::where('tokenable_id', $user->id)->delete();
+        }
 
         return response()->json(['message' => 'Utilisateur supprime.']);
     }
