@@ -22,8 +22,6 @@ class DatabaseSeeder extends Seeder
         if (app()->environment('local')) {
             $this->call([
                 ProductSeeder::class,
-                CouponSeeder::class,
-                OrderSeeder::class,
             ]);
 
             User::firstOrCreate(
