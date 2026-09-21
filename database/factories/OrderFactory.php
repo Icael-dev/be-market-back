@@ -16,7 +16,7 @@ class OrderFactory extends Factory
             'user_id' => User::factory(),
             'status' => fake()->randomElement(['pending', 'processing', 'shipped', 'delivered', 'cancelled']),
             'payment_status' => fake()->randomElement(['pending', 'paid', 'failed']),
-            'payment_method' => fake()->randomElement(['tmoney', 'flooz', 'cash_on_delivery']),
+            'payment_method' => fake()->randomElement(['tmoney', 'flooz', 'card', 'cash_on_delivery']),
             'subtotal' => fake()->numberBetween(10000, 200000),
             'discount' => 0,
             'shipping_fee' => 0,

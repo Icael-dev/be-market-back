@@ -101,29 +101,34 @@ class PaymentControllerTest extends TestCase
         ]);
     }
 
-    public function test_user_can_initiate_payment_ligdicash_production(): void
+    public function test_user_can_initiate_payment_fedapay_production(): void
     {
         $this->app['env'] = 'production';
         config(['payment.sandbox' => false]);
 
         config([
-            'services.ligdicash.api_key' => 'test-api-key',
-            'services.ligdicash.api_token' => 'test-api-token',
-            'services.ligdicash.callback_url' => 'https://example.com/callback',
-            'services.ligdicash.base_url' => 'https://app.ligdicash.com/pay/v01',
-        ]);
-
-        Http::fake([
-            'https://app.ligdicash.com/pay/v01/straight/checkout-invoice/create' => Http::response([
-                'response_code' => '00',
-                'token' => 'test-token-123',
-                'checkout_url' => 'https://app.ligdicash.com/pay/v01/redirect/checkout-invoice/test-token-123',
-            ], 200),
+            'services.fedapay.api_key' => 'test-api-key',
+            'services.fedapay.base_url' => 'https://api.fedapay.com/v1',
+            'services.fedapay.callback_url' => 'https://example.com/callback',
         ]);
 
         $user = $this->makeUser();
         $product = $this->makeProduct();
         $order = $this->createOrderForUser($user, $product);
+
+        Http::fake([
+            'https://api.fedapay.com/v1/transactions' => Http::response([
+                'v1/transaction' => [
+                    'id' => 7450,
+                    'reference' => 'ORDER-'.$order->id.'-TEST123',
+                    'amount' => 5000,
+                    'description' => 'Order #'.Str::random(8),
+                    'status' => 'pending',
+                    'callback_url' => 'https://example.com/callback',
+                    'mode' => 'togocel',
+                ],
+            ], 201),
+        ]);
 
         $this->actingAs($user);
 
@@ -151,8 +156,7 @@ class PaymentControllerTest extends TestCase
         ]);
 
         Http::assertSent(function ($request) {
-            return $request->url() === 'https://app.ligdicash.com/pay/v01/straight/checkout-invoice/create'
-                && $request->hasHeader('Apikey')
+            return $request->url() === 'https://api.fedapay.com/v1/transactions'
                 && $request->hasHeader('Authorization');
         });
     }
@@ -232,17 +236,16 @@ class PaymentControllerTest extends TestCase
             ]);
     }
 
-    public function test_verify_payment_ligdicash_confirms_with_provider(): void
+    public function test_verify_payment_fedapay_confirms_with_provider(): void
     {
         $this->app['env'] = 'production';
         config(['payment.sandbox' => false]);
         config(['payment.callback_secret' => 'test-secret']);
 
         config([
-            'services.ligdicash.api_key' => 'test-api-key',
-            'services.ligdicash.api_token' => 'test-api-token',
-            'services.ligdicash.callback_url' => 'https://example.com/callback',
-            'services.ligdicash.base_url' => 'https://app.ligdicash.com/pay/v01',
+            'services.fedapay.api_key' => 'test-api-key',
+            'services.fedapay.base_url' => 'https://api.fedapay.com/v1',
+            'services.fedapay.callback_url' => 'https://example.com/callback',
         ]);
 
         $user = $this->makeUser();
@@ -258,13 +261,18 @@ class PaymentControllerTest extends TestCase
             'status' => 'pending',
             'reference' => 'ORDER-'.$order->id.'-TEST123',
             'phone_number' => '90000000',
-            'provider_response' => ['token' => 'test-token-123'],
+            'provider_response' => ['id' => 7450, 'status' => 'pending'],
         ]);
 
         Http::fake([
-            'https://app.ligdicash.com/pay/v01/redirect/checkout-invoice/confirm/*' => Http::response([
-                'status' => 'completed',
-                'response_code' => '00',
+            'https://api.fedapay.com/v1/transactions/ORDER-*' => Http::response([
+                'v1/transaction' => [
+                    'id' => 7450,
+                    'reference' => 'ORDER-'.$order->id.'-TEST123',
+                    'amount' => 5000,
+                    'status' => 'approved',
+                    'approved_at' => now()->toIso8601String(),
+                ],
             ], 200),
         ]);
 
@@ -280,22 +288,21 @@ class PaymentControllerTest extends TestCase
         ]);
 
         Http::assertSent(function ($request) use ($payment) {
-            return str_contains($request->url(), 'confirm/')
-                && str_contains($request->url(), 'test-token-123');
+            return str_contains($request->url(), '/transactions/')
+                && str_contains($request->url(), 'TEST123');
         });
     }
 
-    public function test_callback_handles_ligdicash_webhook(): void
+    public function test_callback_handles_fedapay_webhook(): void
     {
         $this->app['env'] = 'production';
         config(['payment.sandbox' => false]);
         config(['payment.callback_secret' => 'test-secret']);
 
         config([
-            'services.ligdicash.api_key' => 'test-api-key',
-            'services.ligdicash.api_token' => 'test-api-token',
-            'services.ligdicash.callback_url' => 'https://example.com/callback',
-            'services.ligdicash.base_url' => 'https://app.ligdicash.com/pay/v01',
+            'services.fedapay.api_key' => 'test-api-key',
+            'services.fedapay.base_url' => 'https://api.fedapay.com/v1',
+            'services.fedapay.callback_url' => 'https://example.com/callback',
         ]);
 
         $user = $this->makeUser();
@@ -311,20 +318,25 @@ class PaymentControllerTest extends TestCase
             'status' => 'pending',
             'reference' => 'ORDER-'.$order->id.'-TEST123',
             'phone_number' => '90000000',
-            'provider_response' => ['token' => 'test-token-123'],
+            'provider_response' => ['id' => 7450, 'status' => 'pending'],
         ]);
 
         Http::fake([
-            'https://app.ligdicash.com/pay/v01/redirect/checkout-invoice/confirm/*' => Http::response([
-                'status' => 'completed',
-                'response_code' => '00',
+            'https://api.fedapay.com/v1/transactions/ORDER-*' => Http::response([
+                'v1/transaction' => [
+                    'id' => 7450,
+                    'reference' => 'ORDER-'.$order->id.'-TEST123',
+                    'amount' => 5000,
+                    'status' => 'approved',
+                    'approved_at' => now()->toIso8601String(),
+                ],
             ], 200),
         ]);
 
         $response = $this->withHeaders([
             'X-Callback-Secret' => 'test-secret',
         ])->postJson('/api/payment/callback', [
-            'external_id' => $payment->reference,
+            'reference' => $payment->reference,
             'status' => 'paid',
         ]);
         $response->assertStatus(200);
@@ -370,10 +382,9 @@ class PaymentControllerTest extends TestCase
         config(['payment.callback_secret' => 'test-secret']);
 
         config([
-            'services.ligdicash.api_key' => 'test-api-key',
-            'services.ligdicash.api_token' => 'test-api-token',
-            'services.ligdicash.callback_url' => 'https://example.com/callback',
-            'services.ligdicash.base_url' => 'https://app.ligdicash.com/pay/v01',
+            'services.fedapay.api_key' => 'test-api-key',
+            'services.fedapay.base_url' => 'https://api.fedapay.com/v1',
+            'services.fedapay.callback_url' => 'https://example.com/callback',
         ]);
 
         $user = $this->makeUser();
@@ -389,27 +400,32 @@ class PaymentControllerTest extends TestCase
             'status' => 'pending',
             'reference' => 'ORDER-'.$order->id.'-TEST123',
             'phone_number' => '90000000',
-            'provider_response' => ['token' => 'test-token-123'],
+            'provider_response' => ['id' => 7450, 'status' => 'pending'],
         ]);
 
         Http::fake([
-            'https://app.ligdicash.com/pay/v01/redirect/checkout-invoice/confirm/*' => Http::response([
-                'status' => 'completed',
-                'response_code' => '00',
+            'https://api.fedapay.com/v1/transactions/ORDER-*' => Http::response([
+                'v1/transaction' => [
+                    'id' => 7450,
+                    'reference' => 'ORDER-'.$order->id.'-TEST123',
+                    'amount' => 5000,
+                    'status' => 'approved',
+                    'approved_at' => now()->toIso8601String(),
+                ],
             ], 200),
         ]);
 
         $this->withHeaders([
             'X-Callback-Secret' => 'test-secret',
         ])->postJson('/api/payment/callback', [
-            'external_id' => $payment->reference,
+            'reference' => $payment->reference,
             'status' => 'paid',
         ])->assertStatus(200);
 
         $this->withHeaders([
             'X-Callback-Secret' => 'test-secret',
         ])->postJson('/api/payment/callback', [
-            'external_id' => $payment->reference,
+            'reference' => $payment->reference,
             'status' => 'paid',
         ])->assertStatus(200);
 

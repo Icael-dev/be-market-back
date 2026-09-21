@@ -24,7 +24,7 @@ class CheckoutRequest extends FormRequest
             'shipping_address.country' => ['required', 'string', 'max:255'],
             'shipping_address.postal_code' => ['nullable', 'string', 'max:50'],
             'billing_address' => ['sometimes', 'nullable', 'array'],
-            'payment_method' => ['sometimes', 'nullable', 'string', 'in:tmoney,flooz,cash_on_delivery'],
+            'payment_method' => ['sometimes', 'nullable', 'string', 'in:tmoney,flooz,card,cash_on_delivery'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:1000'],
             'coupon_code' => ['sometimes', 'nullable', 'string', 'max:50'],
             'loyalty_points_to_redeem' => ['sometimes', 'nullable', 'integer', 'min:0'],

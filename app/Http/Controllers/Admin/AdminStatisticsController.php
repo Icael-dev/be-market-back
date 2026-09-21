@@ -83,8 +83,9 @@ class AdminStatisticsController extends Controller
             ->get()
             ->map(fn ($row) => [
                 'name' => match ($row->payment_method) {
-                    'tmoney' => 'Tmoney',
+                    'tmoney' => 'Mixx by Yas',
                     'flooz' => 'Flooz',
+                    'card' => 'Carte bancaire',
                     'cash_on_delivery' => 'Livraison',
                     default => ucfirst((string) $row->payment_method),
                 },

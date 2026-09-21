@@ -23,10 +23,10 @@ return [
         ],
     ],
 
-    'ligdicash' => [
-        'api_key' => env('LIGDICASH_API_KEY'),
-        'api_token' => env('LIGDICASH_API_TOKEN'),
-        'base_url' => env('LIGDICASH_BASE_URL', 'https://app.ligdicash.com/pay/v01'),
+    'fedapay' => [
+        'api_key' => env('FEDEPAY_API_KEY'),
+        'base_url' => env('FEDEPAY_BASE_URL', 'https://api.fedapay.com/v1'),
+        'sandbox_base_url' => env('FEDEPAY_SANDBOX_BASE_URL', 'https://sandbox-api.fedapay.com/v1'),
         'callback_url' => env('PAYMENT_CALLBACK_URL'),
     ],
 

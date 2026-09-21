@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Services\Payment\Contracts\PaymentProvider;
-use App\Services\Payment\Providers\LigdiCashPaymentProvider;
+use App\Services\Payment\Providers\FedaPayPaymentProvider;
 use App\Services\Payment\Providers\SandboxPaymentProvider;
 use Illuminate\Support\ServiceProvider;
 
@@ -16,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
             $isSandbox = config('payment.sandbox');
 
             if ($isProduction && ! $isSandbox) {
-                return new LigdiCashPaymentProvider();
+                return new FedaPayPaymentProvider();
             }
 
             return new SandboxPaymentProvider();

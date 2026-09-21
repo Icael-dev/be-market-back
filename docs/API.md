@@ -271,7 +271,7 @@ Toutes les routes panier requièrent `auth:sanctum`.
 }
 ```
 
-**Réponse `201` (production - LigdiCash) :**
+**Réponse `201` (production - FedaPay) :**
 ```json
 {
   "id": "uuid",
@@ -282,12 +282,14 @@ Toutes les routes panier requièrent `auth:sanctum`.
   "reference": "ORDER-uuid-XXXX",
   "phone_number": "+228 90 00 00 00",
   "paid_at": null,
-  "redirect_url": "https://app.ligdicash.com/pay/v01/redirect/checkout-invoice/...",
+  "redirect_url": null,
   "order": { ... }
 }
 ```
 
-> En production, si `status` est `pending`, le client doit être redirigé vers `redirect_url` pour compléter le paiement.
+> En production avec FedaPay en mode USSD Push (Mixx by Yas/Flooz), `redirect_url` est `null` : le client reçoit une notification USSD pour valider le paiement sur son téléphone. Le statut passe à `paid` une fois confirmé.
+
+> Pour les paiements par carte Visa/Mastercard ou sans mode direct, `redirect_url` contient l'URL de checkout FedaPay vers laquelle le client est redirigé.
 
 ### GET `/payment/verify/{id}`
 
@@ -315,10 +317,10 @@ En production, le provider appelle cette URL pour notifier le changement de stat
 
 **Header requis :** `X-Callback-Secret: <callback_secret>`
 
-**Body (LigdiCash) :**
+**Body (FedaPay) :**
 ```json
 {
-  "external_id": "ORDER-uuid-XXXX",
+  "reference": "ORDER-uuid-XXXX",
   "status": "paid"
 }
 ```
@@ -402,7 +404,7 @@ Toutes les routes admin requièrent `auth:sanctum` **et** `admin` (`role` `admin
     { "name": "Processing", "value": 3 }
   ],
   "payment_data": [
-    { "name": "Tmoney", "value": 5 }
+    { "name": "Mixx by Yas", "value": 5 }
   ]
 }
 ```

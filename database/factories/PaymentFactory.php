@@ -15,7 +15,7 @@ class PaymentFactory extends Factory
             'id' => Str::uuid(),
             'order_id' => Order::factory(),
             'user_id' => User::factory(),
-            'payment_method' => fake()->randomElement(['tmoney', 'flooz', 'cash_on_delivery']),
+            'payment_method' => fake()->randomElement(['tmoney', 'flooz', 'card', 'cash_on_delivery']),
             'amount' => fake()->numberBetween(10000, 200000),
             'phone_number' => fake()->phoneNumber(),
             'reference' => 'PAY-'.strtoupper(fake()->unique()->bothify('########')),

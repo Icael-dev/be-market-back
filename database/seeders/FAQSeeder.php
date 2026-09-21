@@ -12,7 +12,7 @@ class FAQSeeder extends Seeder
         $faqs = [
             [
                 'question' => 'Quels sont les modes de paiement acceptes ?',
-                'answer' => 'Nous acceptons les paiements par Mobile Money (Tmoney, Flooz), carte bancaire et paiement a la livraison. Toutes les transactions sont securisees.',
+                'answer' => 'Nous acceptons les paiements par Mobile Money (Mixx by Yas, Flooz), carte bancaire et paiement a la livraison. Toutes les transactions sont securisees.',
                 'category' => 'paiement',
                 'sort_order' => 1,
             ],

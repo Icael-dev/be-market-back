@@ -15,7 +15,7 @@ class PaymentRequest extends FormRequest
     {
         return [
             'order_id' => ['required', 'uuid', 'exists:orders,id'],
-            'payment_method' => ['required', 'in:tmoney,flooz,cash_on_delivery'],
+            'payment_method' => ['required', 'in:tmoney,flooz,card,cash_on_delivery'],
             'phone_number' => ['nullable', 'string', 'max:20'],
         ];
     }
