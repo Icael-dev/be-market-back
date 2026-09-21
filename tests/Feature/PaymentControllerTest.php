@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -65,8 +66,11 @@ class PaymentControllerTest extends TestCase
         ]);
     }
 
-    public function test_user_can_initiate_payment(): void
+    public function test_user_can_initiate_payment_sandbox(): void
     {
+        config(['app.env' => 'local']);
+        config(['payment.sandbox' => true]);
+
         $user = $this->makeUser();
         $product = $this->makeProduct();
         $order = $this->createOrderForUser($user, $product);
@@ -87,14 +91,70 @@ class PaymentControllerTest extends TestCase
                 'amount',
                 'status',
                 'reference',
-                'phone_number',
             ]);
 
         $this->assertDatabaseHas('payments', [
             'order_id' => $order->id,
             'payment_method' => 'tmoney',
+            'phone_number' => '90000000',
             'status' => 'paid',
         ]);
+    }
+
+    public function test_user_can_initiate_payment_ligdicash_production(): void
+    {
+        $this->app['env'] = 'production';
+        config(['payment.sandbox' => false]);
+
+        config([
+            'services.ligdicash.api_key' => 'test-api-key',
+            'services.ligdicash.api_token' => 'test-api-token',
+            'services.ligdicash.callback_url' => 'https://example.com/callback',
+            'services.ligdicash.base_url' => 'https://app.ligdicash.com/pay/v01',
+        ]);
+
+        Http::fake([
+            'https://app.ligdicash.com/pay/v01/straight/checkout-invoice/create' => Http::response([
+                'response_code' => '00',
+                'token' => 'test-token-123',
+                'checkout_url' => 'https://app.ligdicash.com/pay/v01/redirect/checkout-invoice/test-token-123',
+            ], 200),
+        ]);
+
+        $user = $this->makeUser();
+        $product = $this->makeProduct();
+        $order = $this->createOrderForUser($user, $product);
+
+        $this->actingAs($user);
+
+        $response = $this->postJson('/api/payment/initiate', [
+            'order_id' => $order->id,
+            'payment_method' => 'tmoney',
+            'phone_number' => '90000000',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonStructure([
+                'id',
+                'order_id',
+                'payment_method',
+                'amount',
+                'status',
+                'reference',
+            ]);
+
+        $this->assertDatabaseHas('payments', [
+            'order_id' => $order->id,
+            'payment_method' => 'tmoney',
+            'phone_number' => '90000000',
+            'status' => 'pending',
+        ]);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'https://app.ligdicash.com/pay/v01/straight/checkout-invoice/create'
+                && $request->hasHeader('Apikey')
+                && $request->hasHeader('Authorization');
+        });
     }
 
     public function test_user_can_view_payment_history(): void
@@ -134,5 +194,228 @@ class PaymentControllerTest extends TestCase
         ]);
 
         $response->assertStatus(422);
+    }
+
+    public function test_verify_payment_sandbox(): void
+    {
+        $this->app['env'] = 'local';
+        config(['payment.sandbox' => true]);
+
+        $user = $this->makeUser();
+        $product = $this->makeProduct();
+        $order = $this->createOrderForUser($user, $product);
+
+        $payment = Payment::create([
+            'id' => (string) Str::uuid(),
+            'order_id' => $order->id,
+            'user_id' => $user->id,
+            'payment_method' => 'tmoney',
+            'amount' => $order->total,
+            'status' => 'paid',
+            'reference' => 'PAY-'.strtoupper(Str::random(10)),
+            'phone_number' => '90000000',
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->getJson("/api/payment/verify/{$payment->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'id',
+                'order_id',
+                'payment_method',
+                'amount',
+                'status',
+                'reference',
+            ]);
+    }
+
+    public function test_verify_payment_ligdicash_confirms_with_provider(): void
+    {
+        $this->app['env'] = 'production';
+        config(['payment.sandbox' => false]);
+        config(['payment.callback_secret' => 'test-secret']);
+
+        config([
+            'services.ligdicash.api_key' => 'test-api-key',
+            'services.ligdicash.api_token' => 'test-api-token',
+            'services.ligdicash.callback_url' => 'https://example.com/callback',
+            'services.ligdicash.base_url' => 'https://app.ligdicash.com/pay/v01',
+        ]);
+
+        $user = $this->makeUser();
+        $product = $this->makeProduct();
+        $order = $this->createOrderForUser($user, $product);
+
+        $payment = Payment::create([
+            'id' => (string) Str::uuid(),
+            'order_id' => $order->id,
+            'user_id' => $user->id,
+            'payment_method' => 'tmoney',
+            'amount' => $order->total,
+            'status' => 'pending',
+            'reference' => 'ORDER-'.$order->id.'-TEST123',
+            'phone_number' => '90000000',
+            'provider_response' => ['token' => 'test-token-123'],
+        ]);
+
+        Http::fake([
+            'https://app.ligdicash.com/pay/v01/redirect/checkout-invoice/confirm/*' => Http::response([
+                'status' => 'completed',
+                'response_code' => '00',
+            ], 200),
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->getJson("/api/payment/verify/{$payment->id}");
+
+        $response->assertStatus(200);
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'status' => 'paid',
+        ]);
+
+        Http::assertSent(function ($request) use ($payment) {
+            return str_contains($request->url(), 'confirm/')
+                && str_contains($request->url(), 'test-token-123');
+        });
+    }
+
+    public function test_callback_handles_ligdicash_webhook(): void
+    {
+        $this->app['env'] = 'production';
+        config(['payment.sandbox' => false]);
+        config(['payment.callback_secret' => 'test-secret']);
+
+        config([
+            'services.ligdicash.api_key' => 'test-api-key',
+            'services.ligdicash.api_token' => 'test-api-token',
+            'services.ligdicash.callback_url' => 'https://example.com/callback',
+            'services.ligdicash.base_url' => 'https://app.ligdicash.com/pay/v01',
+        ]);
+
+        $user = $this->makeUser();
+        $product = $this->makeProduct();
+        $order = $this->createOrderForUser($user, $product);
+
+        $payment = Payment::create([
+            'id' => (string) Str::uuid(),
+            'order_id' => $order->id,
+            'user_id' => $user->id,
+            'payment_method' => 'tmoney',
+            'amount' => $order->total,
+            'status' => 'pending',
+            'reference' => 'ORDER-'.$order->id.'-TEST123',
+            'phone_number' => '90000000',
+            'provider_response' => ['token' => 'test-token-123'],
+        ]);
+
+        Http::fake([
+            'https://app.ligdicash.com/pay/v01/redirect/checkout-invoice/confirm/*' => Http::response([
+                'status' => 'completed',
+                'response_code' => '00',
+            ], 200),
+        ]);
+
+        $response = $this->withHeaders([
+            'X-Callback-Secret' => 'test-secret',
+        ])->postJson('/api/payment/callback', [
+            'external_id' => $payment->reference,
+            'status' => 'paid',
+        ]);
+        $response->assertStatus(200);
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'status' => 'paid',
+        ]);
+    }
+
+    public function test_callback_requires_valid_secret_in_production(): void
+    {
+        config(['app.env' => 'production']);
+        config(['payment.callback_secret' => 'correct-secret']);
+
+        $user = $this->makeUser();
+        $product = $this->makeProduct();
+        $order = $this->createOrderForUser($user, $product);
+
+        Payment::create([
+            'id' => (string) Str::uuid(),
+            'order_id' => $order->id,
+            'user_id' => $user->id,
+            'payment_method' => 'tmoney',
+            'amount' => $order->total,
+            'status' => 'pending',
+            'reference' => 'PAY-'.strtoupper(Str::random(10)),
+            'phone_number' => '90000000',
+        ]);
+
+        $response = $this->postJson('/api/payment/callback', [
+            'reference' => 'PAY-TEST123',
+            'status' => 'paid',
+        ]);
+
+        $response->assertStatus(401);
+    }
+
+    public function test_callback_idempotent(): void
+    {
+        $this->app['env'] = 'production';
+        config(['payment.sandbox' => false]);
+        config(['payment.callback_secret' => 'test-secret']);
+
+        config([
+            'services.ligdicash.api_key' => 'test-api-key',
+            'services.ligdicash.api_token' => 'test-api-token',
+            'services.ligdicash.callback_url' => 'https://example.com/callback',
+            'services.ligdicash.base_url' => 'https://app.ligdicash.com/pay/v01',
+        ]);
+
+        $user = $this->makeUser();
+        $product = $this->makeProduct();
+        $order = $this->createOrderForUser($user, $product);
+
+        $payment = Payment::create([
+            'id' => (string) Str::uuid(),
+            'order_id' => $order->id,
+            'user_id' => $user->id,
+            'payment_method' => 'tmoney',
+            'amount' => $order->total,
+            'status' => 'pending',
+            'reference' => 'ORDER-'.$order->id.'-TEST123',
+            'phone_number' => '90000000',
+            'provider_response' => ['token' => 'test-token-123'],
+        ]);
+
+        Http::fake([
+            'https://app.ligdicash.com/pay/v01/redirect/checkout-invoice/confirm/*' => Http::response([
+                'status' => 'completed',
+                'response_code' => '00',
+            ], 200),
+        ]);
+
+        $this->withHeaders([
+            'X-Callback-Secret' => 'test-secret',
+        ])->postJson('/api/payment/callback', [
+            'external_id' => $payment->reference,
+            'status' => 'paid',
+        ])->assertStatus(200);
+
+        $this->withHeaders([
+            'X-Callback-Secret' => 'test-secret',
+        ])->postJson('/api/payment/callback', [
+            'external_id' => $payment->reference,
+            'status' => 'paid',
+        ])->assertStatus(200);
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'status' => 'paid',
+        ]);
     }
 }

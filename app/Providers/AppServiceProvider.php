@@ -2,21 +2,27 @@
 
 namespace App\Providers;
 
+use App\Services\Payment\Contracts\PaymentProvider;
+use App\Services\Payment\Providers\LigdiCashPaymentProvider;
+use App\Services\Payment\Providers\SandboxPaymentProvider;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        //
+        $this->app->bind(PaymentProvider::class, function ($app) {
+            $isProduction = $app->environment('production');
+            $isSandbox = config('payment.sandbox');
+
+            if ($isProduction && ! $isSandbox) {
+                return new LigdiCashPaymentProvider();
+            }
+
+            return new SandboxPaymentProvider();
+        });
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         //

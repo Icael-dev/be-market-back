@@ -29,10 +29,10 @@ class AdminCustomerController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%'.$search.'%')
-                  ->orWhereHas('profile', function ($q2) use ($search) {
-                      $q2->where('full_name', 'like', '%'.$search.'%')
-                         ->orWhere('phone', 'like', '%'.$search.'%');
-                  });
+                    ->orWhereHas('profile', function ($q2) use ($search) {
+                        $q2->where('full_name', 'like', '%'.$search.'%')
+                            ->orWhere('phone', 'like', '%'.$search.'%');
+                    });
             });
         }
 

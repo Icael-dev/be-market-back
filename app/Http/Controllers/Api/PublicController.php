@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\StockNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
@@ -28,7 +29,7 @@ class PublicController extends Controller
             $banners = Banner::where('is_active', true)->orderBy('sort_order')->get();
         }
 
-        if (! $banners instanceof \Illuminate\Support\Collection) {
+        if (! $banners instanceof Collection) {
             $banners = Banner::where('is_active', true)->orderBy('sort_order')->get();
         }
 
@@ -78,7 +79,7 @@ class PublicController extends Controller
             $faqs = FAQ::where('is_active', true)->orderBy('sort_order')->get();
         }
 
-        if (! $faqs instanceof \Illuminate\Support\Collection) {
+        if (! $faqs instanceof Collection) {
             $faqs = FAQ::where('is_active', true)->orderBy('sort_order')->get();
         }
 

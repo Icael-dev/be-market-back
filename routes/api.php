@@ -41,7 +41,6 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
     Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
     Route::get('user', [AuthController::class, 'user'])->middleware('auth:sanctum');
-    Route::post('refresh', [AuthController::class, 'refresh'])->middleware('auth:sanctum');
     Route::post('forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:5,1');
     Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 });

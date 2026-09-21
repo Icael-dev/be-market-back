@@ -47,7 +47,7 @@ class CategorySeeder extends Seeder
                 'sort_order' => 7,
             ],
             [
-                'name' => 'Huffers & Power Banks',
+                'name' => 'Hubs & Power Banks',
                 'description' => 'Batteries externes, chargeurs rapides, chargeurs solaires et cables',
                 'sort_order' => 8,
             ],

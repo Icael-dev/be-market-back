@@ -98,21 +98,6 @@ class AuthController extends Controller
         ]);
     }
 
-    public function refresh(Request $request): JsonResponse
-    {
-        $user = $request->user();
-
-        return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'email' => $user->email,
-                'created_at' => $user->created_at,
-                'updated_at' => $user->updated_at,
-            ],
-            'profile' => $user->profile,
-        ]);
-    }
-
     public function sendResetLink(Request $request): JsonResponse
     {
         $validator = Validator::make($request->only(['email']), [
@@ -129,6 +114,7 @@ class AuthController extends Controller
         DB::table('password_reset_tokens')->where('email', $email)->delete();
 
         $token = Str::random(60);
+        $resetUrl = rtrim(config('app.frontend_url'), '/') . '/reset-password/' . $token;
 
         DB::table('password_reset_tokens')->insert([
             'email' => $email,

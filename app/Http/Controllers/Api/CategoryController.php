@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
@@ -26,7 +27,7 @@ class CategoryController extends Controller
                 ->get();
         }
 
-        if (! $categories instanceof \Illuminate\Support\Collection) {
+        if (! $categories instanceof Collection) {
             $categories = Category::where('is_active', true)
                 ->with('specs')
                 ->orderBy('sort_order')

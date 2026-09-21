@@ -10,8 +10,6 @@ use App\Services\CouponService;
 use App\Services\OrderService;
 use App\Support\StoreSettings;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
 {

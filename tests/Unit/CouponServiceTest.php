@@ -30,7 +30,7 @@ class CouponServiceTest extends TestCase
 
     public function test_validates_active_coupon(): void
     {
-        $service = new CouponService();
+        $service = new CouponService;
         $coupon = $this->makeCoupon();
 
         $result = $service->validate($coupon->code, 1000);
@@ -41,7 +41,7 @@ class CouponServiceTest extends TestCase
 
     public function test_rejects_inactive_coupon(): void
     {
-        $service = new CouponService();
+        $service = new CouponService;
         $coupon = $this->makeCoupon(['is_active' => false]);
 
         $result = $service->validate($coupon->code, 1000);
@@ -51,7 +51,7 @@ class CouponServiceTest extends TestCase
 
     public function test_rejects_expired_coupon(): void
     {
-        $service = new CouponService();
+        $service = new CouponService;
         $coupon = $this->makeCoupon(['expires_at' => now()->subDay()]);
 
         $result = $service->validate($coupon->code, 1000);
@@ -61,7 +61,7 @@ class CouponServiceTest extends TestCase
 
     public function test_rejects_future_coupon(): void
     {
-        $service = new CouponService();
+        $service = new CouponService;
         $coupon = $this->makeCoupon(['starts_at' => now()->addDay()]);
 
         $result = $service->validate($coupon->code, 1000);
@@ -71,7 +71,7 @@ class CouponServiceTest extends TestCase
 
     public function test_rejects_coupon_below_minimum_order(): void
     {
-        $service = new CouponService();
+        $service = new CouponService;
         $coupon = $this->makeCoupon(['min_order_amount' => 500]);
 
         $result = $service->validate($coupon->code, 100);
@@ -81,7 +81,7 @@ class CouponServiceTest extends TestCase
 
     public function test_rejects_coupon_at_max_uses(): void
     {
-        $service = new CouponService();
+        $service = new CouponService;
         $coupon = $this->makeCoupon(['max_uses' => 1, 'uses_count' => 1]);
 
         $result = $service->validate($coupon->code, 1000);
@@ -91,7 +91,7 @@ class CouponServiceTest extends TestCase
 
     public function test_rejects_coupon_already_used_by_user(): void
     {
-        $service = new CouponService();
+        $service = new CouponService;
         $coupon = $this->makeCoupon();
         $user = User::factory()->create();
 
@@ -104,7 +104,7 @@ class CouponServiceTest extends TestCase
 
     public function test_percentage_discount_is_calculated_correctly(): void
     {
-        $service = new CouponService();
+        $service = new CouponService;
         $coupon = $this->makeCoupon([
             'discount_type' => 'percentage',
             'discount_value' => 10,
@@ -118,7 +118,7 @@ class CouponServiceTest extends TestCase
 
     public function test_fixed_discount_cannot_exceed_subtotal(): void
     {
-        $service = new CouponService();
+        $service = new CouponService;
         $coupon = $this->makeCoupon(['discount_value' => 2000]);
 
         $result = $service->validate($coupon->code, 1000);

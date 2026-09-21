@@ -16,9 +16,13 @@ class AdminSeeder extends Seeder
             return;
         }
 
-        $email = env('ADMIN_SEED_EMAIL', 'admin@example.com');
-        $password = env('ADMIN_SEED_PASSWORD', 'password');
-        $name = env('ADMIN_SEED_NAME', 'Admin');
+        $email = env('ADMIN_SEED_EMAIL');
+        $password = env('ADMIN_SEED_PASSWORD');
+        $name = env('ADMIN_SEED_NAME');
+
+        if (! $email || ! $password || ! $name) {
+            return;
+        }
 
         $user = User::firstWhere('email', $email);
         if (! $user) {
@@ -31,8 +35,15 @@ class AdminSeeder extends Seeder
             ]);
             $user->id = (string) Str::uuid();
             $user->save();
-        } elseif ($user->role !== User::ROLE_ADMIN) {
-            $user->update(['is_admin' => true, 'role' => User::ROLE_ADMIN]);
+        } else {
+            $user->update([
+                'name' => $name,
+                'is_admin' => true,
+                'role' => User::ROLE_ADMIN,
+            ]);
+            if ($password) {
+                $user->update(['password' => Hash::make($password)]);
+            }
         }
 
         Profile::updateOrCreate(
@@ -41,8 +52,6 @@ class AdminSeeder extends Seeder
                 'id' => (string) Str::uuid(),
                 'email' => $user->email,
                 'full_name' => $user->name,
-                'phone' => null,
-                'avatar_url' => null,
                 'is_admin' => true,
                 'role' => User::ROLE_ADMIN,
             ]

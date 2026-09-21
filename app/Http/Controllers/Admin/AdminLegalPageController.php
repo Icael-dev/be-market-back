@@ -41,6 +41,11 @@ class AdminLegalPageController extends Controller
         return response()->json($page, 201);
     }
 
+    public function show(string $id): JsonResponse
+    {
+        return response()->json(LegalPage::findOrFail($id));
+    }
+
     public function update(Request $request, string $id): JsonResponse
     {
         $page = LegalPage::findOrFail($id);

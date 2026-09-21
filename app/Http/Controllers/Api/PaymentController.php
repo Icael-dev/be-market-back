@@ -6,12 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\PaymentRequest;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\Payment\Contracts\PaymentProvider;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
 {
+    public function __construct(
+        private readonly PaymentProvider $paymentProvider
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         $payments = Payment::whereHas('order', fn ($q) => $q->where('user_id', $request->user()->id))
@@ -26,7 +31,7 @@ class PaymentController extends Controller
     {
         $data = $request->only(['order_id', 'payment_method', 'phone_number']);
 
-        if (app()->environment('production') && env('PAYMENT_SANDBOX', true)) {
+        if (app()->environment('production') && config('payment.sandbox')) {
             return response()->json(['message' => 'Payment sandbox is not allowed in production.'], 500);
         }
 
@@ -42,23 +47,12 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Order already paid.'], 400);
         }
 
-        $isSandbox = env('PAYMENT_SANDBOX', true);
+        $result = $this->paymentProvider->initiate($order, $data);
 
-        $payment = Payment::create([
-            'order_id' => $order->id,
-            'payment_method' => $data['payment_method'],
-            'amount' => $order->total,
-            'phone_number' => $data['phone_number'],
-            'reference' => 'PAY-'.strtoupper(uniqid()),
-            'status' => $isSandbox ? 'paid' : 'pending',
-            'paid_at' => $isSandbox ? now() : null,
-        ]);
+        $data = $result['payment']->load('order')->toArray();
+        $data['redirect_url'] = $result['redirect_url'];
 
-        if ($isSandbox) {
-            $order->update(['payment_status' => 'paid']);
-        }
-
-        return response()->json($payment->load('order'), 201);
+        return response()->json($data, 201);
     }
 
     public function verify(Request $request, string $id): JsonResponse
@@ -71,12 +65,18 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Payment not found.'], 404);
         }
 
-        return response()->json($payment);
+        $result = $this->paymentProvider->verify($payment->reference);
+
+        if (! $result['found']) {
+            return response()->json(['message' => 'Payment not found.'], 404);
+        }
+
+        return response()->json($payment->fresh()->load('order'));
     }
 
     public function callback(Request $request): JsonResponse
     {
-        $secret = env('PAYMENT_CALLBACK_SECRET');
+        $secret = config('payment.callback_secret');
 
         if (app()->environment('production') && empty($secret)) {
             return response()->json(['message' => 'Callback secret not configured.'], 500);
@@ -86,11 +86,14 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Unauthorized callback.'], 401);
         }
 
-        $data = $request->only(['reference', 'status', 'provider_data']);
+        $data = array_merge($request->all(), $request->query());
 
         $validator = Validator::make($data, [
-            'reference' => ['required', 'string'],
-            'status' => ['required', 'string'],
+            'reference' => ['sometimes', 'string'],
+            'external_id' => ['sometimes', 'string'],
+            'invoiceToken' => ['sometimes', 'string'],
+            'transaction_id' => ['sometimes', 'string'],
+            'status' => ['sometimes', 'string'],
             'provider_data' => ['sometimes', 'array'],
         ]);
 
@@ -98,22 +101,12 @@ class PaymentController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $payment = Payment::where('reference', $data['reference'])->first();
+        $result = $this->paymentProvider->handleCallback($data);
 
-        if (! $payment) {
-            return response()->json(['message' => 'Payment not found.'], 404);
+        if (! $result['success']) {
+            return response()->json(['message' => $result['message']], 404);
         }
 
-        $payment->update([
-            'status' => $data['status'],
-            'provider_response' => $data['provider_data'] ?? null,
-            'paid_at' => $data['status'] === 'paid' ? now() : $payment->paid_at,
-        ]);
-
-        if ($data['status'] === 'paid') {
-            $payment->order->update(['payment_status' => 'paid']);
-        }
-
-        return response()->json($payment->load('order'));
+        return response()->json($result['payment']);
     }
 }

@@ -48,7 +48,7 @@ class CategorySpecsSeeder extends Seeder
                 ['key' => 'Puissance', 'placeholder' => 'Ex: 20W'],
                 ['key' => 'Connectivite', 'placeholder' => 'Ex: Bluetooth'],
             ],
-            'huffers-power-banks' => [
+            'hubs-power-banks' => [
                 ['key' => 'Marque', 'placeholder' => 'Ex: Xiaomi, Anker'],
                 ['key' => 'Capacite', 'placeholder' => 'Ex: 10000mAh'],
                 ['key' => 'Connectivite', 'placeholder' => 'Ex: USB-C'],
@@ -57,6 +57,12 @@ class CategorySpecsSeeder extends Seeder
                 ['key' => 'Marque', 'placeholder' => 'Ex: Apple, Samsung'],
                 ['key' => 'Taille', 'placeholder' => 'Ex: 42mm, 46mm'],
                 ['key' => 'Connectivite', 'placeholder' => 'Ex: Bluetooth, GPS'],
+            ],
+            'pochettes-coques-telephone' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: OtterBox, Spigen'],
+                ['key' => 'Modele', 'placeholder' => 'Ex: iPhone 15 Pro'],
+                ['key' => 'Compatibilite', 'placeholder' => 'Ex: iPhone, Galaxy'],
+                ['key' => 'Type', 'placeholder' => 'Ex: Coque, Etui, Film'],
             ],
             'tablettes' => [
                 ['key' => 'Marque', 'placeholder' => 'Ex: Apple, Samsung'],
@@ -86,6 +92,11 @@ class CategorySpecsSeeder extends Seeder
                 ['key' => 'Marque', 'placeholder' => 'Ex: Logitech'],
                 ['key' => 'Type', 'placeholder' => 'Ex: Clavier, Souris'],
                 ['key' => 'Connectivite', 'placeholder' => 'Ex: USB, Bluetooth'],
+            ],
+            'logiciels-abonnements' => [
+                ['key' => 'Type', 'placeholder' => 'Ex: Antivirus, VPN, Suite bureautique'],
+                ['key' => 'Duree', 'placeholder' => 'Ex: 1 an, 3 mois, Mensuel'],
+                ['key' => 'Licenses', 'placeholder' => 'Ex: 1 utilisateur, 5 utilisateurs'],
             ],
         ];
 

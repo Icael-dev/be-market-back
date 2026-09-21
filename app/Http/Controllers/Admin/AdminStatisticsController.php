@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CouponUsage;
-use App\Models\NewsletterSubscriber;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;

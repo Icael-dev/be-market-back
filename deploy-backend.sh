@@ -11,9 +11,8 @@
 #
 # Prerequis cote serveur (a faire UNE fois, manuellement et de facon securisee) :
 #   - .env de production correctement rempli (voir verifications ci-dessous)
-#   - Cles Passport generees et SAUVEGARDEES : php artisan passport:keys
-#   - Personal Access Client cree UNE fois : php artisan passport:client --personal
-#     (son secret ne doit PAS etre regenere a chaque deploiement)
+#   - SANCTUM_STATEFUL_DOMAINS contient le domaine du frontend
+#   - SESSION_SECURE_COOKIE=true est active en production
 #   - L'admin cree une fois puis mot de passe change (ne pas re-seeder en prod)
 #
 # Usage :

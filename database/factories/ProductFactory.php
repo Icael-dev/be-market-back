@@ -17,7 +17,7 @@ class ProductFactory extends Factory
             'sku' => strtoupper(fake()->bothify('SKU-???-####')),
             'description' => fake()->paragraph(),
             'price' => fake()->numberBetween(5000, 500000),
-            'compare_price' => fake()->numberBetween(6000, 600000),
+            'compare_price' => fake()->numberBetween(5000, 600000),
             'stock' => fake()->numberBetween(0, 100),
             'category_id' => Category::factory(),
             'images' => [],

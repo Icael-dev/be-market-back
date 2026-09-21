@@ -37,6 +37,11 @@ class AdminTestimonialController extends Controller
         return response()->json($testimonial, 201);
     }
 
+    public function show(string $id): JsonResponse
+    {
+        return response()->json(Testimonial::findOrFail($id));
+    }
+
     public function update(Request $request, string $id): JsonResponse
     {
         $testimonial = Testimonial::findOrFail($id);

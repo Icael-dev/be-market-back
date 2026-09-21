@@ -17,6 +17,11 @@ class AdminFAQController extends Controller
         );
     }
 
+    public function show(string $id): JsonResponse
+    {
+        return response()->json(FAQ::findOrFail($id));
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [

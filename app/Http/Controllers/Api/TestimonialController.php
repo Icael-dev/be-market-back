@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Testimonial;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class TestimonialController extends Controller
@@ -25,7 +26,7 @@ class TestimonialController extends Controller
                 ->get();
         }
 
-        if (! $testimonials instanceof \Illuminate\Support\Collection) {
+        if (! $testimonials instanceof Collection) {
             $testimonials = Testimonial::where('is_active', true)
                 ->orderBy('sort_order', 'asc')
                 ->orderBy('created_at', 'desc')

@@ -98,6 +98,7 @@ class ProductController extends Controller
         }
 
         $products = $query->get();
+
         return response()->json([
             'data' => $products,
             'current_page' => 1,
