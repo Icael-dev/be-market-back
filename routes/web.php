@@ -13,3 +13,7 @@ Route::get('/sanctum/csrf-cookie', function () {
 Route::get('/up', function () {
     return response()->json(['status' => 'ok']);
 })->middleware('throttle:60,1');
+
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok']);
+})->middleware('throttle:120,1');

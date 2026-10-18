@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\FAQ;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class FAQSeeder extends Seeder
 {
@@ -73,9 +74,9 @@ class FAQSeeder extends Seeder
         ];
 
         foreach ($faqs as $faq) {
-            FAQ::firstOrCreate(
+            FAQ::updateOrCreate(
                 ['question' => $faq['question']],
-                $faq
+                array_merge($faq, ['id' => (string) Str::uuid()])
             );
         }
     }
