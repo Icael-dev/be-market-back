@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,9 +13,19 @@ use Illuminate\Support\Str;
 
 class AdminProductController extends Controller
 {
+    private function validateImageValue($value, $fail): void
+    {
+        if (is_string($value)
+            && (filter_var($value, FILTER_VALIDATE_URL) !== false || str_starts_with($value, '/'))) {
+            return;
+        }
+
+        $fail('The image must be a valid URL or path.');
+    }
+
     public function index(): JsonResponse
     {
-        return response()->json(Product::with('category')->orderBy('created_at', 'desc')->get());
+        return response()->json(Product::withTrashed()->with('category')->orderBy('created_at', 'desc')->get());
     }
 
     public function store(Request $request): JsonResponse
@@ -32,7 +43,7 @@ class AdminProductController extends Controller
             'min_stock_alert' => ['nullable', 'integer', 'min:0'],
             'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
             'images' => ['nullable', 'array', 'max:10'],
-            'images.*' => ['nullable', 'url'],
+            'images.*' => ['nullable', fn ($attribute, $value, $fail) => $this->validateImageValue($value, $fail)],
             'specs' => ['nullable', 'array'],
             'specs.*' => ['string'],
             'dimensions' => ['nullable', 'array'],
@@ -47,6 +58,7 @@ class AdminProductController extends Controller
             'meta_keywords' => ['nullable', 'string'],
             'is_featured' => ['boolean'],
             'is_active' => ['boolean'],
+            'condition' => ['nullable', 'string', 'in:new,used,refurbished'],
             'weight' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -57,26 +69,41 @@ class AdminProductController extends Controller
         $data = $validator->validated();
 
         if (empty($data['slug'])) {
-            $data['slug'] = Str::slug($data['name']) . '-' . Str::random(6);
+            $data['slug'] = Str::slug($data['name']).'-'.Str::random(6);
         } else {
             $data['slug'] = Str::slug($data['slug']);
         }
 
         if (empty($data['sku'])) {
-            $data['sku'] = 'PROD-' . Str::random(8);
+            $data['sku'] = 'PROD-'.Str::random(8);
         }
 
         $data['is_featured'] = $data['is_featured'] ?? false;
         $data['is_active'] = $data['is_active'] ?? true;
+        $data['condition'] = $data['condition'] ?? 'new';
 
         $product = Product::create($data);
+
         return response()->json($product, 201);
     }
 
     public function show(string $id): JsonResponse
     {
-        $product = Product::with('category')->findOrFail($id);
+        $product = Product::withTrashed()->with('category')->findOrFail($id);
+
         return response()->json($product);
+    }
+
+    public function orders(string $id): JsonResponse
+    {
+        $orders = Order::with(['user', 'items.product'])
+            ->whereHas('items', function ($query) use ($id) {
+                $query->where('product_id', $id);
+            })
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json($orders);
     }
 
     public function update(Request $request, string $id): JsonResponse
@@ -85,8 +112,8 @@ class AdminProductController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => ['sometimes', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:products,slug,' . $product->id],
-            'sku' => ['nullable', 'string', 'max:100', 'unique:products,sku,' . $product->id],
+            'slug' => ['nullable', 'string', 'max:255', 'unique:products,slug,'.$product->id],
+            'sku' => ['nullable', 'string', 'max:100', 'unique:products,sku,'.$product->id],
             'description' => ['nullable', 'string'],
             'short_description' => ['nullable', 'string'],
             'price' => ['sometimes', 'numeric', 'min:0'],
@@ -96,7 +123,7 @@ class AdminProductController extends Controller
             'min_stock_alert' => ['nullable', 'integer', 'min:0'],
             'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
             'images' => ['nullable', 'array', 'max:10'],
-            'images.*' => ['nullable', 'url'],
+            'images.*' => ['nullable', fn ($attribute, $value, $fail) => $this->validateImageValue($value, $fail)],
             'specs' => ['nullable', 'array'],
             'specs.*' => ['string'],
             'dimensions' => ['nullable', 'array'],
@@ -111,6 +138,7 @@ class AdminProductController extends Controller
             'meta_keywords' => ['nullable', 'string'],
             'is_featured' => ['boolean'],
             'is_active' => ['boolean'],
+            'condition' => ['nullable', 'string', 'in:new,used,refurbished'],
             'weight' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -130,8 +158,8 @@ class AdminProductController extends Controller
             $data['sku'] = null;
         }
 
-        if (empty($data['sku']) && !$product->sku) {
-            $data['sku'] = 'PROD-' . Str::random(8);
+        if (empty($data['sku']) && ! $product->sku) {
+            $data['sku'] = 'PROD-'.Str::random(8);
         }
 
         if (isset($data['compare_price']) && $data['compare_price'] === '') {
@@ -143,20 +171,30 @@ class AdminProductController extends Controller
         }
 
         $product->update($data);
+
         return response()->json($product->load('category'));
     }
 
     public function destroy(string $id): JsonResponse
     {
-        $product = Product::findOrFail($id);
+        $product = Product::withTrashed()->findOrFail($id);
         $product->delete();
+
         return response()->json(['message' => 'Product deleted.']);
+    }
+
+    public function restore(string $id): JsonResponse
+    {
+        $product = Product::withTrashed()->findOrFail($id);
+        $product->restore();
+
+        return response()->json(['message' => 'Product restored.', 'product' => $product->load('category')]);
     }
 
     public function uploadImage(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'image' => ['required', 'image', 'max:2048'],
+            'image' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:10240'],
         ]);
 
         if ($validator->fails()) {
@@ -170,20 +208,24 @@ class AdminProductController extends Controller
         ], 201);
     }
 
-    public function suggestions(Request $request): JsonResponse
+    public function addStock(Request $request, string $id): JsonResponse
     {
-        $query = $request->query('q', '');
-        $limit = min($request->query('limit', 10), 20);
+        $product = Product::withTrashed()->findOrFail($id);
 
-        $products = Product::query()
-            ->select(['id', 'name', 'slug', 'sku', 'price', 'images'])
-            ->where(function ($q) use ($query) {
-                $q->where('name', 'ILIKE', "%{$query}%")
-                  ->orWhere('sku', 'ILIKE', "%{$query}%");
-            })
-            ->limit($limit)
-            ->get();
+        $validator = Validator::make($request->all(), [
+            'quantity' => ['required', 'integer', 'min:1'],
+        ]);
 
-        return response()->json($products);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $quantity = (int) $request->input('quantity');
+        $product->increment('stock', $quantity);
+
+        return response()->json([
+            'message' => 'Stock added successfully.',
+            'product' => $product->fresh(),
+        ]);
     }
 }

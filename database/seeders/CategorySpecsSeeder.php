@@ -18,7 +18,7 @@ class CategorySpecsSeeder extends Seeder
                 ['key' => 'RAM', 'placeholder' => 'Ex: 8GB'],
                 ['key' => 'Ecran', 'placeholder' => 'Ex: 6.1 pouces'],
             ],
-            'ordinateurs' => [
+            'ordinateurs-portables' => [
                 ['key' => 'Marque', 'placeholder' => 'Ex: HP, Dell, Lenovo'],
                 ['key' => 'Processeur', 'placeholder' => 'Ex: Intel i7-13700H'],
                 ['key' => 'RAM', 'placeholder' => 'Ex: 16GB DDR5'],
@@ -26,53 +26,89 @@ class CategorySpecsSeeder extends Seeder
                 ['key' => 'Ecran', 'placeholder' => 'Ex: 15.6 pouces FHD'],
                 ['key' => 'Carte graphique', 'placeholder' => 'Ex: RTX 4060'],
             ],
-            'vetements-hommes' => [
-                ['key' => 'Taille', 'placeholder' => 'Ex: S, M, L, XL'],
-                ['key' => 'Couleur', 'placeholder' => 'Ex: Noir, Blanc'],
-                ['key' => 'Matiere', 'placeholder' => 'Ex: Coton, Jean'],
-                ['key' => 'Style', 'placeholder' => 'Ex: Casual, Sport'],
+            'ordinateurs-de-bureau' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: HP, Dell'],
+                ['key' => 'Processeur', 'placeholder' => 'Ex: Intel i7'],
+                ['key' => 'RAM', 'placeholder' => 'Ex: 16GB'],
+                ['key' => 'Stockage', 'placeholder' => 'Ex: 1TB SSD'],
             ],
-            'vetements-femmes' => [
-                ['key' => 'Taille', 'placeholder' => 'Ex: S, M, L'],
-                ['key' => 'Couleur', 'placeholder' => 'Ex: Rouge, Rose'],
-                ['key' => 'Matiere', 'placeholder' => 'Ex: Coton, Soie'],
-                ['key' => 'Style', 'placeholder' => 'Ex: Casual, Elegant'],
+            'casques-audio' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: Sony, JBL'],
+                ['key' => 'Type', 'placeholder' => 'Ex: Circum-auriculaire, Intra'],
+                ['key' => 'Connectivite', 'placeholder' => 'Ex: Bluetooth, Filaire'],
+                ['key' => 'Autonomie', 'placeholder' => 'Ex: 30h'],
             ],
-            'chaussures-hommes' => [
-                ['key' => 'Pointure', 'placeholder' => 'Ex: 42, 43, 44'],
-                ['key' => 'Couleur', 'placeholder' => 'Ex: Noir, Marron'],
-                ['key' => 'Matiere', 'placeholder' => 'Ex: Cuir, Tissu'],
-            ],
-            'chaussures-femmes' => [
-                ['key' => 'Pointure', 'placeholder' => 'Ex: 37, 38, 39'],
-                ['key' => 'Couleur', 'placeholder' => 'Ex: Noir, Beige'],
-                ['key' => 'Matiere', 'placeholder' => 'Ex: Cuir, Tissu'],
-                ['key' => 'Talons', 'placeholder' => 'Ex: Plat, 5cm'],
-            ],
-            'accessoires' => [
-                ['key' => 'Materiau', 'placeholder' => 'Ex: Acier, Cuir'],
-                ['key' => 'Couleur', 'placeholder' => 'Ex: Or, Argent'],
-                ['key' => 'Genre', 'placeholder' => 'Ex: Homme, Femme, Unisexe'],
-            ],
-            'maison' => [
-                ['key' => 'Materiau', 'placeholder' => 'Ex: Bois, Metal'],
-                ['key' => 'Dimensions', 'placeholder' => 'Ex: 100x50x30 cm'],
-                ['key' => 'Couleur', 'placeholder' => 'Ex: Blanc, Gris'],
-            ],
-            'electronique' => [
-                ['key' => 'Marque', 'placeholder' => 'Ex: Sony, Samsung'],
-                ['key' => 'Puissance', 'placeholder' => 'Ex: 20W'],
+            'airpods-ecouteurs' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: Apple, Samsung'],
                 ['key' => 'Connectivite', 'placeholder' => 'Ex: Bluetooth 5.0'],
-                ['key' => 'Autonomie', 'placeholder' => 'Ex: 10 heures'],
+                ['key' => 'Autonomie', 'placeholder' => 'Ex: 6h'],
+            ],
+            'baffles-enceintes' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: JBL, Bose'],
+                ['key' => 'Puissance', 'placeholder' => 'Ex: 20W'],
+                ['key' => 'Connectivite', 'placeholder' => 'Ex: Bluetooth'],
+            ],
+            'hubs-power-banks' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: Xiaomi, Anker'],
+                ['key' => 'Capacite', 'placeholder' => 'Ex: 10000mAh'],
+                ['key' => 'Connectivite', 'placeholder' => 'Ex: USB-C'],
+            ],
+            'montres-connectees' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: Apple, Samsung'],
+                ['key' => 'Taille', 'placeholder' => 'Ex: 42mm, 46mm'],
+                ['key' => 'Connectivite', 'placeholder' => 'Ex: Bluetooth, GPS'],
+            ],
+            'pochettes-coques-telephone' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: OtterBox, Spigen'],
+                ['key' => 'Modele', 'placeholder' => 'Ex: iPhone 15 Pro'],
+                ['key' => 'Compatibilite', 'placeholder' => 'Ex: iPhone, Galaxy'],
+                ['key' => 'Type', 'placeholder' => 'Ex: Coque, Etui, Film'],
+            ],
+            'tablettes' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: Apple, Samsung'],
+                ['key' => 'Taille', 'placeholder' => 'Ex: 10.9 pouces'],
+                ['key' => 'Stockage', 'placeholder' => 'Ex: 64GB, 256GB'],
+            ],
+            'appareils-photo' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: Canon, Nikon'],
+                ['key' => 'Resolution', 'placeholder' => 'Ex: 24MP'],
+                ['key' => 'Type', 'placeholder' => 'Ex: Hybride, Reflex'],
+            ],
+            'gaming' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: Sony, Microsoft'],
+                ['key' => 'Type', 'placeholder' => 'Ex: Console, Manette'],
+            ],
+            'reseau-wifi' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: TP-Link, Netgear'],
+                ['key' => 'Standard', 'placeholder' => 'Ex: Wi-Fi 6'],
+                ['key' => 'Debit', 'placeholder' => 'Ex: 1200 Mbps'],
+            ],
+            'stockage' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: Samsung, SanDisk'],
+                ['key' => 'Capacite', 'placeholder' => 'Ex: 1TB'],
+                ['key' => 'Type', 'placeholder' => 'Ex: SSD, HDD'],
+            ],
+            'peripheriques' => [
+                ['key' => 'Marque', 'placeholder' => 'Ex: Logitech'],
+                ['key' => 'Type', 'placeholder' => 'Ex: Clavier, Souris'],
+                ['key' => 'Connectivite', 'placeholder' => 'Ex: USB, Bluetooth'],
+            ],
+            'logiciels-abonnements' => [
+                ['key' => 'Type', 'placeholder' => 'Ex: Antivirus, VPN, Suite bureautique'],
+                ['key' => 'Duree', 'placeholder' => 'Ex: 1 an, 3 mois, Mensuel'],
+                ['key' => 'Licenses', 'placeholder' => 'Ex: 1 utilisateur, 5 utilisateurs'],
             ],
         ];
 
         foreach ($defaultSpecs as $slug => $specs) {
             $category = Category::where('slug', $slug)->first();
-            if ($category) {
-                foreach ($specs as $spec) {
-                    $category->specs()->create($spec);
-                }
+            if (! $category) {
+                continue;
+            }
+
+            $category->specs()->delete();
+            foreach ($specs as $spec) {
+                $category->specs()->create($spec);
             }
         }
     }

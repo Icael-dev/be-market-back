@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Support\StoreSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class AdminSettingController extends Controller
 {
@@ -25,15 +26,25 @@ class AdminSettingController extends Controller
             'tax_rate' => 'sometimes|numeric',
             'shipping_fee' => 'sometimes|numeric',
             'free_shipping_threshold' => 'sometimes|numeric',
+            'loyalty_points_threshold' => 'sometimes|numeric|min:0',
             'site_name' => 'sometimes|string',
             'site_description' => 'sometimes|string',
             'support_email' => 'sometimes|string|email',
             'shipping_cost' => 'sometimes|numeric',
         ]);
 
+        $aliases = [
+            'site_name' => 'store_name',
+            'support_email' => 'store_email',
+            'shipping_cost' => 'shipping_fee',
+        ];
+
         foreach ($updates as $key => $value) {
-            Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+            $canonicalKey = $aliases[$key] ?? $key;
+            Setting::updateOrCreate(['key' => $canonicalKey], ['value' => $value]);
         }
+
+        Cache::forget('settings.global');
 
         return response()->json(StoreSettings::resolve());
     }

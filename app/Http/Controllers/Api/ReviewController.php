@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReviewRequest;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ReviewController extends Controller
 {
@@ -22,25 +23,19 @@ class ReviewController extends Controller
         return response()->json($query->orderBy('created_at', 'desc')->get());
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(ReviewRequest $request): JsonResponse
     {
         $data = $request->only(['product_id', 'rating', 'title', 'comment']);
 
-        $validator = Validator::make($data, [
-            'product_id' => ['required', 'uuid', 'exists:products,id'],
-            'rating' => ['required', 'integer', 'min:1', 'max:5'],
-            'title' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'comment' => ['sometimes', 'nullable', 'string'],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         $product = Product::find($data['product_id']);
-        if (!$product) {
+        if (! $product) {
             return response()->json(['message' => 'Product not found.'], 404);
         }
+
+        $verifiedPurchase = Order::where('user_id', $request->user()->id)
+            ->where('payment_status', 'paid')
+            ->whereHas('items', fn ($q) => $q->where('product_id', $product->id))
+            ->exists();
 
         $review = Review::create([
             'product_id' => $product->id,
@@ -48,7 +43,7 @@ class ReviewController extends Controller
             'rating' => $data['rating'],
             'title' => $data['title'] ?? null,
             'comment' => $data['comment'] ?? null,
-            'is_verified_purchase' => false,
+            'is_verified_purchase' => $verifiedPurchase,
         ]);
 
         return response()->json($review->load('user.profile'), 201);

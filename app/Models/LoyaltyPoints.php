@@ -11,6 +11,7 @@ class LoyaltyPoints extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -19,18 +20,20 @@ class LoyaltyPoints extends Model
         'points',
         'total_earned',
         'total_redeemed',
+        'points_expire_at',
     ];
 
     protected $casts = [
         'points' => 'integer',
         'total_earned' => 'integer',
         'total_redeemed' => 'integer',
+        'points_expire_at' => 'datetime',
     ];
 
     protected static function booted(): void
     {
         static::creating(function (LoyaltyPoints $loyaltyPoints) {
-            if (!$loyaltyPoints->id) {
+            if (! $loyaltyPoints->id) {
                 $loyaltyPoints->id = (string) Str::uuid();
             }
         });

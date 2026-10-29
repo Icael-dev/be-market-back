@@ -31,7 +31,7 @@ class SupportController extends Controller
             'status' => 'open',
         ]);
 
-        if (!empty($data['message'])) {
+        if (! empty($data['message'])) {
             SupportMessage::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $request->user()->id,
@@ -46,13 +46,14 @@ class SupportController extends Controller
     public function index(Request $request): JsonResponse
     {
         $tickets = SupportTicket::where('user_id', $request->user()->id)->with('messages.user.profile')->get();
+
         return response()->json($tickets);
     }
 
     public function show(Request $request, string $id): JsonResponse
     {
         $ticket = SupportTicket::where('user_id', $request->user()->id)->with('messages.user.profile')->find($id);
-        if (!$ticket) {
+        if (! $ticket) {
             return response()->json(['message' => 'Ticket not found.'], 404);
         }
 
@@ -62,7 +63,7 @@ class SupportController extends Controller
     public function storeMessage(Request $request, string $id): JsonResponse
     {
         $ticket = SupportTicket::where('user_id', $request->user()->id)->find($id);
-        if (!$ticket) {
+        if (! $ticket) {
             return response()->json(['message' => 'Ticket not found.'], 404);
         }
 

@@ -47,7 +47,7 @@ class CategorySeeder extends Seeder
                 'sort_order' => 7,
             ],
             [
-                'name' => 'Huffers & Power Banks',
+                'name' => 'Hubs & Power Banks',
                 'description' => 'Batteries externes, chargeurs rapides, chargeurs solaires et cables',
                 'sort_order' => 8,
             ],
@@ -96,7 +96,7 @@ class CategorySeeder extends Seeder
         foreach ($categories as $category) {
             $slug = Str::slug($category['name']);
             $existing = Category::where('slug', $slug)->first();
-            
+
             if ($existing) {
                 $existing->update([
                     'description' => $category['description'],

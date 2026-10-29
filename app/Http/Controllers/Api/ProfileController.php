@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Address;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ProfileController extends Controller
@@ -21,7 +22,7 @@ class ProfileController extends Controller
 
         $validator = Validator::make($data, [
             'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,' . $request->user()->id],
+            'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,'.$request->user()->id],
             'full_name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
             'avatar_url' => ['sometimes', 'nullable', 'url'],
@@ -32,6 +33,11 @@ class ProfileController extends Controller
         }
 
         $user = $request->user();
+
+        if (isset($data['email']) && $data['email'] !== $user->email) {
+            $user->email_verified_at = null;
+        }
+
         if (isset($data['full_name'])) {
             $user->name = $data['full_name'];
         }
@@ -89,7 +95,7 @@ class ProfileController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        if (!empty($data['is_default'])) {
+        if (! empty($data['is_default'])) {
             $request->user()->addresses()->update(['is_default' => false]);
         }
 
@@ -101,7 +107,7 @@ class ProfileController extends Controller
     public function updateAddress(Request $request, string $id): JsonResponse
     {
         $address = $request->user()->addresses()->where('id', $id)->first();
-        if (!$address) {
+        if (! $address) {
             return response()->json(['message' => 'Address not found.'], 404);
         }
 
@@ -124,7 +130,7 @@ class ProfileController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        if (!empty($data['is_default'])) {
+        if (! empty($data['is_default'])) {
             $request->user()->addresses()->update(['is_default' => false]);
         }
 
@@ -137,12 +143,63 @@ class ProfileController extends Controller
     public function destroyAddress(Request $request, string $id): JsonResponse
     {
         $address = $request->user()->addresses()->where('id', $id)->first();
-        if (!$address) {
+        if (! $address) {
             return response()->json(['message' => 'Address not found.'], 404);
         }
 
         $address->delete();
 
         return response()->json(['message' => 'Address deleted.']);
+    }
+
+    public function uploadAvatar(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'avatar' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+
+        $user = $request->user();
+        $profile = $user->profile;
+        if ($profile) {
+            $profile->update(['avatar_url' => Storage::url($path)]);
+        } else {
+            $user->profile()->create([
+                'email' => $user->email,
+                'full_name' => $user->name,
+                'phone' => null,
+                'avatar_url' => Storage::url($path),
+            ]);
+        }
+
+        return response()->json(['avatar_url' => Storage::url($path)]);
+    }
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+
+        if (! Hash::check($request->input('current_password'), $user->password)) {
+            return response()->json(['errors' => ['current_password' => ['Le mot de passe actuel est incorrect.']]], 422);
+        }
+
+        $user->password = Hash::make($request->input('password'));
+        $user->save();
+
+        return response()->json(['message' => 'Mot de passe mis à jour.']);
     }
 }

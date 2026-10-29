@@ -11,6 +11,7 @@ class SupportTicket extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -24,7 +25,7 @@ class SupportTicket extends Model
     protected static function booted(): void
     {
         static::creating(function (SupportTicket $ticket) {
-            if (!$ticket->id) {
+            if (! $ticket->id) {
                 $ticket->id = (string) Str::uuid();
             }
         });

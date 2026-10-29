@@ -11,6 +11,7 @@ class Setting extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -26,7 +27,7 @@ class Setting extends Model
     protected static function booted(): void
     {
         static::creating(function (Setting $setting) {
-            if (!$setting->id) {
+            if (! $setting->id) {
                 $setting->id = (string) Str::uuid();
             }
         });

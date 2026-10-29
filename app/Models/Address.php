@@ -11,6 +11,7 @@ class Address extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -35,7 +36,7 @@ class Address extends Model
     protected static function booted(): void
     {
         static::creating(function (Address $address) {
-            if (!$address->id) {
+            if (! $address->id) {
                 $address->id = (string) Str::uuid();
             }
         });

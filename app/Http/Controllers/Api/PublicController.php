@@ -6,20 +6,34 @@ use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use App\Models\BlogPost;
 use App\Models\FAQ;
-use App\Models\LegalPage;
 use App\Models\FlashSale;
+use App\Models\LegalPage;
 use App\Models\NewsletterSubscriber;
-use App\Models\Setting;
+use App\Models\Product;
 use App\Models\StockNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class PublicController extends Controller
 {
-    public function banners(): JsonResponse
+    public function banners(Request $request): JsonResponse
     {
-        return response()->json(Banner::where('is_active', true)->orderBy('sort_order')->get());
+        try {
+            $banners = Cache::remember('banners.active', 3600, function () {
+                return Banner::where('is_active', true)->orderBy('sort_order')->get();
+            });
+        } catch (\Throwable $e) {
+            $banners = Banner::where('is_active', true)->orderBy('sort_order')->get();
+        }
+
+        if (! $banners instanceof Collection) {
+            $banners = Banner::where('is_active', true)->orderBy('sort_order')->get();
+        }
+
+        return response()->json($banners);
     }
 
     public function blog(Request $request): JsonResponse
@@ -36,15 +50,40 @@ class PublicController extends Controller
     public function blogDetail(string $slug): JsonResponse
     {
         $post = BlogPost::where('slug', $slug)->where('is_published', true)->first();
-        if (!$post) {
+        if (! $post) {
             return response()->json(['message' => 'Blog post not found.'], 404);
         }
-        return response()->json($post);
+
+        $relatedProducts = collect($post->related_product_ids ?? [])
+            ->filter()
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $data = $post->toArray();
+        $data['related_products'] = ! empty($relatedProducts)
+            ? Product::whereIn('id', $relatedProducts)->where('is_active', true)->get()
+            : [];
+
+        return response()->json($data);
     }
 
     public function faqs(): JsonResponse
     {
-        return response()->json(FAQ::where('is_active', true)->orderBy('sort_order')->get());
+        try {
+            $faqs = Cache::remember('faqs.active', 3600, function () {
+                return FAQ::where('is_active', true)->orderBy('sort_order')->get();
+            });
+        } catch (\Throwable $e) {
+            $faqs = FAQ::where('is_active', true)->orderBy('sort_order')->get();
+        }
+
+        if (! $faqs instanceof Collection) {
+            $faqs = FAQ::where('is_active', true)->orderBy('sort_order')->get();
+        }
+
+        return response()->json($faqs);
     }
 
     public function legalPages(): JsonResponse
@@ -55,15 +94,16 @@ class PublicController extends Controller
     public function legalPage(string $slug): JsonResponse
     {
         $page = LegalPage::where('slug', $slug)->first();
-        if (!$page) {
+        if (! $page) {
             return response()->json(['message' => 'Legal page not found.'], 404);
         }
+
         return response()->json($page);
     }
 
     public function flashSales(Request $request): JsonResponse
     {
-        $query = FlashSale::with('product');
+        $query = FlashSale::with('product.activeFlashSale');
 
         if ($request->boolean('active')) {
             $now = now();

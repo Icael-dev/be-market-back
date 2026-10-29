@@ -11,6 +11,7 @@ class Review extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -31,7 +32,7 @@ class Review extends Model
     protected static function booted(): void
     {
         static::creating(function (Review $review) {
-            if (!$review->id) {
+            if (! $review->id) {
                 $review->id = (string) Str::uuid();
             }
         });

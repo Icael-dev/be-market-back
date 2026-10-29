@@ -1,7 +1,7 @@
 # API REST — be-market-back
 
 Base URL : `/api`  
-Authentification : Bearer JWT (Laravel Passport) via header `Authorization: Bearer <token>`
+Authentification : Laravel Sanctum avec cookies de session. Le frontend appelle `/sanctum/csrf-cookie`, puis envoie les cookies avec `credentials: 'include'` et le header `X-XSRF-TOKEN`. Aucun token JWT n'est émis.
 
 ## Conventions
 
@@ -18,9 +18,8 @@ Authentification : Bearer JWT (Laravel Passport) via header `Authorization: Bear
 |---------|-------|------|-------------|
 | POST | `/auth/register` | Public | Inscription |
 | POST | `/auth/login` | Public | Connexion |
-| POST | `/auth/logout` | `auth:api` | Révoque le token courant |
-| GET | `/auth/user` | `auth:api` | Utilisateur connecté |
-| POST | `/auth/refresh` | `auth:api` | Renouvelle le token |
+| POST | `/auth/logout` | `auth:sanctum` | Déconnecte la session courante |
+| GET | `/auth/user` | `auth:sanctum` | Utilisateur connecté |
 
 ### POST `/auth/register`
 
@@ -38,7 +37,6 @@ Authentification : Bearer JWT (Laravel Passport) via header `Authorization: Bear
 **Réponse `201` :**
 ```json
 {
-  "token": "eyJ...",
   "user": {
     "id": "uuid",
     "email": "user@example.com",
@@ -69,7 +67,7 @@ Authentification : Bearer JWT (Laravel Passport) via header `Authorization: Bear
 }
 ```
 
-**Réponse `200` :** même format que register.
+**Réponse `200` :** même format que register, sans token.
 
 ### GET `/auth/user`
 
@@ -186,7 +184,7 @@ Des valeurs par défaut sont renvoyées si aucun enregistrement n'existe en base
 
 ## Panier
 
-Toutes les routes panier requièrent `auth:api`.
+Toutes les routes panier requièrent `auth:sanctum`.
 
 | Méthode | Route | Description |
 |---------|-------|-------------|
@@ -238,22 +236,135 @@ Toutes les routes panier requièrent `auth:api`.
 
 ---
 
+## Paiement (`/api/payment/*`)
+
+| Méthode | Route | Auth | Description |
+|---------|-------|------|-------------|
+| POST | `/payment/initiate` | `auth:sanctum` | Initier un paiement |
+| GET | `/payment/verify/{id}` | `auth:sanctum` | Vérifier le statut d'un paiement |
+| POST | `/payment/callback` | Public (X-Callback-Secret) | Webhook du provider |
+| GET | `/payment/history` | `auth:sanctum` | Historique des paiements |
+
+### POST `/payment/initiate`
+
+**Body :**
+```json
+{
+  "order_id": "uuid",
+  "payment_method": "tmoney",
+  "phone_number": "+228 90 00 00 00"
+}
+```
+
+**Réponse `201` (sandbox) :**
+```json
+{
+  "id": "uuid",
+  "order_id": "uuid",
+  "payment_method": "tmoney",
+  "amount": 5000,
+  "status": "paid",
+  "reference": "PAY-XXXX",
+  "phone_number": "+228 90 00 00 00",
+  "paid_at": "2026-09-20T10:00:00.000000Z",
+  "order": { ... }
+}
+```
+
+**Réponse `201` (production - FedaPay) :**
+```json
+{
+  "id": "uuid",
+  "order_id": "uuid",
+  "payment_method": "tmoney",
+  "amount": 5000,
+  "status": "pending",
+  "reference": "ORDER-uuid-XXXX",
+  "phone_number": "+228 90 00 00 00",
+  "paid_at": null,
+  "redirect_url": null,
+  "order": { ... }
+}
+```
+
+> En production avec FedaPay en mode USSD Push (Mixx by Yas/Flooz), `redirect_url` est `null` : le client reçoit une notification USSD pour valider le paiement sur son téléphone. Le statut passe à `paid` une fois confirmé.
+
+> Pour les paiements par carte Visa/Mastercard ou sans mode direct, `redirect_url` contient l'URL de checkout FedaPay vers laquelle le client est redirigé.
+
+### GET `/payment/verify/{id}`
+
+Vérifie le statut du paiement auprès du provider en production, ou retourne directement le paiement en sandbox.
+
+**Réponse `200` :**
+```json
+{
+  "id": "uuid",
+  "order_id": "uuid",
+  "payment_method": "tmoney",
+  "amount": 5000,
+  "status": "paid",
+  "reference": "ORDER-uuid-XXXX",
+  "paid_at": "2026-09-20T10:05:00.000000Z",
+  "order": { ... }
+}
+```
+
+### POST `/payment/callback`
+
+Webhook public du provider de paiement. Sécurisé par le header `X-Callback-Secret`.
+
+En production, le provider appelle cette URL pour notifier le changement de statut d'un paiement.
+
+**Header requis :** `X-Callback-Secret: <callback_secret>`
+
+**Body (FedaPay) :**
+```json
+{
+  "reference": "ORDER-uuid-XXXX",
+  "status": "paid"
+}
+```
+
+**Réponse `200` :**
+```json
+{
+  "id": "uuid",
+  "order_id": "uuid",
+  "status": "paid",
+  "paid_at": "2026-09-20T10:05:00.000000Z"
+}
+```
+
+### GET `/payment/history`
+
+**Réponse `200` :** `[Payment[]]` — Liste des paiements de l'utilisateur connecté, triés par date décroissante, avec la commande associée.
+
+---
+
 ## Admin (`/api/admin/*`)
 
-Toutes les routes admin requièrent `auth:api` **et** `admin` (`profile.is_admin = true` ou `users.is_admin = true`).
+Toutes les routes admin requièrent `auth:sanctum` **et** `admin` (`role` `admin` ou `staff`).
 
 | Ressource | Routes |
 |-----------|--------|
-| Produits | `GET/POST /admin/products`, `GET/PUT/PATCH/DELETE /admin/products/{id}` |
-| Catégories | `GET/POST /admin/categories`, `GET/PUT/PATCH/DELETE /admin/categories/{id}` |
-| Bannières | `GET/POST /admin/banners`, ... |
-| Blog | `GET/POST /admin/blog-posts`, ... |
-| Coupons | `GET/POST /admin/coupons`, ... |
-| Flash sales | `GET/POST /admin/flash-sales`, ... |
+| Produits | `GET/POST /admin/products`, `GET/PUT/PATCH/DELETE /admin/products/{id}`, `POST /admin/products/upload-image`, `POST /admin/products/{id}/add-stock`, `POST /admin/products/{id}/restore` |
+| Catégories | `GET/POST /admin/categories`, `GET/PUT/PATCH/DELETE /admin/categories/{id}`, `POST /admin/categories/{id}/restore` |
+| Bannières | `GET/POST /admin/banners`, `GET/PUT/PATCH/DELETE /admin/banners/{banner}` |
+| Blog | `GET/POST /admin/blog-posts`, `GET/PUT/PATCH/DELETE /admin/blog-posts/{blog_post}` |
+| Coupons | `GET/POST /admin/coupons`, `GET/PUT/PATCH/DELETE /admin/coupons/{coupon}` |
+| Flash sales | `GET/POST /admin/flash-sales`, `GET/PUT/PATCH/DELETE /admin/flash-sales/{flash_sale}` |
+| FAQ | `GET/POST /admin/faqs`, `GET/PUT/PATCH/DELETE /admin/faqs/{faq}` |
+| Pages légales | `GET/POST /admin/legal-pages`, `GET/PUT/PATCH/DELETE /admin/legal-pages/{legal_page}` |
+| Statistiques | `GET /admin/statistics`, `GET /admin/statistics/category-sales`, `GET /admin/statistics/coupons`, `GET /admin/statistics/failed-payments`, `GET /admin/statistics/low-stock`, `GET /admin/statistics/new-customers`, `GET /admin/statistics/top-customers`, `GET /admin/statistics/top-products`, `GET /admin/statistics/unsold-products`, `GET/POST /admin/export` |
+| Commandes | `GET /admin/orders`, `PUT /admin/orders/{id}`, `POST /admin/orders/{id}/restore` |
+| Clients | `GET /admin/customers`, `GET /admin/customers/{id}`, `GET /admin/customers/{id}/orders`, `GET /admin/customers/{id}/loyalty`, `GET /admin/customers/{id}/payments` |
+| Paiements | `GET /admin/payments` |
+| Fidélité | `GET /admin/loyalty/points`, `GET /admin/loyalty/transactions` |
+| Support | `GET/POST /admin/support/tickets`, `GET/PUT /admin/support/tickets/{id}`, `POST /admin/support/tickets/{id}/messages` |
+| Témoignages | `GET/POST /admin/testimonials`, `GET/PUT/PATCH/DELETE /admin/testimonials/{testimonial}` |
+| Utilisateurs | `GET/POST /admin/users`, `GET/PUT/PATCH/DELETE /admin/users/{id}`, `POST /admin/users/{id}/restore` |
+| Upload image | `POST /admin/upload-image` |
 | Settings | `GET/PUT /admin/settings` |
-| Commandes | `GET /admin/orders` |
-| Clients | `GET /admin/customers` |
-| Statistiques | `GET /admin/statistics`, `GET /admin/export` |
 
 ### PUT `/admin/settings`
 
@@ -270,32 +381,119 @@ Toutes les routes admin requièrent `auth:api` **et** `admin` (`profile.is_admin
 }
 ```
 
+### GET `/admin/statistics`
+
+**Réponse `200` :** Statistiques globales + KPIs de période (voir `AdminStatisticsController@index`)
+
+```json
+{
+  "total_revenue": 125000,
+  "total_orders": 45,
+  "total_products": 32,
+  "total_customers": 16,
+  "period_revenue": 25000,
+  "period_orders": 10,
+  "new_customers": 3,
+  "avg_order": 2500,
+  "revenue_change": 15.5,
+  "orders_change": -2.0,
+  "daily_revenue": [
+    { "date": "21 Sep", "revenue": 5000, "orders": 2 }
+  ],
+  "status_data": [
+    { "name": "Processing", "value": 3 }
+  ],
+  "payment_data": [
+    { "name": "Mixx by Yas", "value": 5 }
+  ]
+}
+```
+
+### GET `/admin/statistics/{sub-route}`
+
+Sous-routes de statistiques (toutes acceptent `?days=N` pour la période) :
+
+| Sous-route | Description |
+|------------|-------------|
+| `/admin/statistics/category-sales` | Ventes par catégorie (`orders_count`, `total_quantity`, `total_revenue`) |
+| `/admin/statistics/coupons` | Utilisation des coupons (`code`, `usage_count`) |
+| `/admin/statistics/failed-payments` | Paiements échoués (`failed`, `cancelled`, `refunded`) |
+| `/admin/statistics/low-stock` | Produits en stock faible (seuil configurable via `?threshold=N`) |
+| `/admin/statistics/new-customers` | Nouveaux clients récents (limite via `?limit=N`) |
+| `/admin/statistics/top-customers` | Clients les plus dépensiers (`total_spent`, `orders_count`) |
+| `/admin/statistics/top-products` | Produits les plus vendus (`total_quantity`, `total_revenue`) |
+| `/admin/statistics/unsold-products` | Produits jamais vendus |
+
+### GET `/admin/export`
+
+**Query params :** `?type=orders|products|coupons` (défaut: `orders`)
+
+**Réponse :** Fichier CSV téléchargeable.
+
+### GET `/admin/payments`
+
+**Query params :** `?status=`, `?payment_method=`, `?user_id=`
+
+**Réponse `200` :** `[Payment[]]` paginé avec `order` et `user` inclus.
+
+### GET `/admin/loyalty/points`
+
+**Réponse `200` :** `[LoyaltyPoints[]]` paginé (trie par points décroissant, avec `user` inclus).
+
+### GET `/admin/loyalty/transactions`
+
+**Query params :** `?user_id=`, `?type=` (earned/redeemed)
+
+**Réponse `200` :** `[LoyaltyTransaction[]]` paginé avec `user` et `order` inclus.
+
+### GET/POST `/admin/support/tickets`
+
+**Query params (GET) :** `?status=`, `?priority=`, `?search=`
+
+**Réponse (GET) `200` :** `[SupportTicket[]]` paginé avec `user` et `messages.user.profile`.
+
+### GET/PUT/DELETE `/admin/support/tickets/{id}`
+
+**PUT body :** `{ "status"?: "open|in_progress|resolved|closed", "priority"?: "low|normal|high|urgent" }`
+
+### POST `/admin/support/tickets/{id}/messages`
+
+**Body :** `{ "message": "..." }`
+
+Si le ticket est `open`, passe automatiquement à `in_progress`.
+
+### GET/POST `/admin/faqs`
+
+**POST body :** `{ "question", "answer", "category", "sort_order"? }`
+
+### GET/PUT/PATCH/DELETE `/admin/faqs/{faq}`
+
 ---
 
 ## Autres endpoints (déjà implémentés)
 
 | Domaine | Routes publiques | Routes authentifiées |
 |---------|------------------|----------------------|
-| Profil | — | `GET/PUT /profile` |
+| Profil | — | `GET/PUT /profile`, `POST /profile/avatar`, `POST /profile/password` |
 | Adresses | — | `GET/POST /addresses`, `PUT/DELETE /addresses/{id}` |
-| Commandes | — | `POST /checkout`, `GET /orders`, `GET /orders/{id}` |
+| Commandes | — | `POST /checkout`, `GET /orders`, `GET /orders/{id}`, `POST /orders/{id}/cancel`, `GET/POST /admin/orders`, `PUT /admin/orders/{id}`, `POST /admin/orders/{id}/restore` |
 | Wishlist | — | `GET/POST /wishlist`, `DELETE /wishlist/{id}` |
-| Support | — | `GET/POST /support/tickets`, `GET /support/tickets/{id}`, `POST /support/tickets/{id}/messages` |
-| Contenu | `/banners`, `/blog`, `/blog/{slug}`, `/faqs`, `/legal/{slug}`, `/flash-sales` | — |
+| Support | — | `GET/POST /support/tickets`, `GET /support/tickets/{id}`, `POST /support/tickets/{id}/messages` (user) | `GET/POST /admin/support/tickets`, `PUT /admin/support/tickets/{id}`, `POST /admin/support/tickets/{id}/messages` (admin) |
+| Contenu | `/banners`, `/blog`, `/blog/{slug}`, `/faqs`, `/legal/{slug}`, `/flash-sales`, `/admin/banners`, `/admin/blog-posts`, `/admin/faqs`, `/admin/legal-pages`, `/admin/flash-sales` | — |
 | Newsletter | `POST /newsletter` | — |
 | Stock alerts | `POST /stock-notifications` | — |
+| Images | `GET /images/{folder}/{path}` | `POST /admin/upload-image` |
 
 ---
 
-## Configuration Passport
+## Configuration Sanctum
 
-```bash
-php artisan migrate
-php artisan passport:install
+Le frontend doit d'abord obtenir le cookie CSRF :
+
+```http
+GET /sanctum/csrf-cookie
 ```
 
-Le token JWT est obtenu via `/api/auth/login` ou `/api/auth/register` et transmis dans chaque requête protégée :
+Puis envoyer les requêtes JSON avec `credentials: 'include'` et le header `X-XSRF-TOKEN`. Les routes protégées utilisent `auth:sanctum` et la session web ; aucun bearer token n'est requis.
 
-```
-Authorization: Bearer <token>
-```
+En production, `SANCTUM_STATEFUL_DOMAINS` doit contenir le domaine du frontend et `SESSION_SECURE_COOKIE=true` doit être activé. Si le frontend et l'API partagent un domaine parent, configurez également `SESSION_DOMAIN` (par exemple `.tondomaine.com`).

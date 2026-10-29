@@ -11,6 +11,7 @@ class StockNotification extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -28,7 +29,7 @@ class StockNotification extends Model
     protected static function booted(): void
     {
         static::creating(function (StockNotification $notification) {
-            if (!$notification->id) {
+            if (! $notification->id) {
                 $notification->id = (string) Str::uuid();
             }
         });

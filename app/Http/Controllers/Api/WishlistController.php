@@ -14,6 +14,7 @@ class WishlistController extends Controller
     public function index(Request $request): JsonResponse
     {
         $items = Wishlist::where('user_id', $request->user()->id)->with('product')->get();
+
         return response()->json($items);
     }
 
@@ -29,7 +30,7 @@ class WishlistController extends Controller
         }
 
         $product = Product::find($data['product_id']);
-        if (!$product) {
+        if (! $product) {
             return response()->json(['message' => 'Product not found.'], 404);
         }
 
@@ -44,7 +45,7 @@ class WishlistController extends Controller
     public function destroy(Request $request, string $id): JsonResponse
     {
         $item = Wishlist::where('user_id', $request->user()->id)->where('id', $id)->first();
-        if (!$item) {
+        if (! $item) {
             return response()->json(['message' => 'Wishlist item not found.'], 404);
         }
 

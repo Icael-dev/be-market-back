@@ -11,6 +11,7 @@ class BlogPost extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -23,17 +24,19 @@ class BlogPost extends Model
         'author_id',
         'is_published',
         'published_at',
+        'related_product_ids',
     ];
 
     protected $casts = [
         'is_published' => 'boolean',
         'published_at' => 'datetime',
+        'related_product_ids' => 'array',
     ];
 
     protected static function booted(): void
     {
         static::creating(function (BlogPost $post) {
-            if (!$post->id) {
+            if (! $post->id) {
                 $post->id = (string) Str::uuid();
             }
         });

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\LoyaltyPoints;
 use App\Models\LoyaltyTransaction;
+use App\Support\StoreSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,7 +22,12 @@ class LoyaltyController extends Controller
             ]
         );
 
-        return response()->json($loyaltyPoints);
+        $settings = StoreSettings::resolve();
+
+        return response()->json([
+            ...$loyaltyPoints->toArray(),
+            'threshold' => (int) $settings['loyalty_points_threshold'],
+        ]);
     }
 
     public function transactions(Request $request): JsonResponse

@@ -16,16 +16,22 @@ class AdminCouponController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $coupon = Coupon::create($request->validate([
+        $data = $request->validate([
             'code' => 'required|string|unique:coupons,code',
             'discount_type' => 'required|in:percentage,fixed',
-            'discount_value' => 'required|numeric',
+            'discount_value' => ['required', 'numeric', 'min:0', function ($attribute, $value, $fail) use ($request) {
+                if ($request->input('discount_type') === 'percentage' && $value > 100) {
+                    $fail('Percentage discount cannot exceed 100.');
+                }
+            }],
             'min_order_amount' => 'sometimes|nullable|numeric',
             'max_uses' => 'sometimes|nullable|integer',
             'starts_at' => 'sometimes|nullable|date',
             'expires_at' => 'sometimes|nullable|date|after:starts_at',
             'is_active' => 'sometimes|boolean',
-        ]));
+        ]);
+
+        $coupon = Coupon::create($data);
 
         return response()->json($coupon, 201);
     }
@@ -38,16 +44,22 @@ class AdminCouponController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         $coupon = Coupon::findOrFail($id);
-        $coupon->update($request->validate([
-            'code' => 'sometimes|string|unique:coupons,code,' . $id,
+        $data = $request->validate([
+            'code' => 'sometimes|string|unique:coupons,code,'.$id,
             'discount_type' => 'sometimes|in:percentage,fixed',
-            'discount_value' => 'sometimes|numeric',
+            'discount_value' => ['sometimes', 'numeric', 'min:0', function ($attribute, $value, $fail) use ($request) {
+                if ($request->input('discount_type') === 'percentage' && $value > 100) {
+                    $fail('Percentage discount cannot exceed 100.');
+                }
+            }],
             'min_order_amount' => 'sometimes|nullable|numeric',
             'max_uses' => 'sometimes|nullable|integer',
             'starts_at' => 'sometimes|nullable|date',
             'expires_at' => 'sometimes|nullable|date|after:starts_at',
             'is_active' => 'sometimes|boolean',
-        ]));
+        ]);
+
+        $coupon->update($data);
 
         return response()->json($coupon);
     }
@@ -55,6 +67,7 @@ class AdminCouponController extends Controller
     public function destroy(string $id): JsonResponse
     {
         Coupon::findOrFail($id)->delete();
+
         return response()->json(['message' => 'Coupon deleted.']);
     }
 }

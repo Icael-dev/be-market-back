@@ -11,7 +11,7 @@ class ProductController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Product::where('is_active', true)->with('category');
+        $query = Product::where('is_active', true)->with(['category', 'activeFlashSale']);
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->query('category_id'));
@@ -36,11 +36,16 @@ class ProductController extends Controller
         }
 
         if ($request->filled('search')) {
-            $term = '%'.$request->query('search').'%';
+            $term = $request->query('search');
+            if (mb_strlen($term) > 100) {
+                $term = mb_substr($term, 0, 100);
+            }
+            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $term);
+            $like = '%'.$escaped.'%';
             $query->where(fn ($builder) => $builder
-                ->where('name', 'ilike', $term)
-                ->orWhere('description', 'ilike', $term)
-                ->orWhere('sku', 'ilike', $term));
+                ->where('name', 'ilike', $like)
+                ->orWhere('description', 'ilike', $like)
+                ->orWhere('sku', 'ilike', $like));
         }
 
         if ($request->filled('brand')) {
@@ -53,6 +58,22 @@ class ProductController extends Controller
 
         if ($request->filled('max_price')) {
             $query->where('price', '<=', $request->query('max_price'));
+        }
+
+        if ($request->boolean('flash_sale')) {
+            $query->whereHas('activeFlashSale');
+        }
+
+        if ($request->filled('condition')) {
+            $query->where('condition', $request->query('condition'));
+        }
+
+        if ($request->boolean('in_stock')) {
+            $query->where('stock', '>', 0);
+        }
+
+        if ($request->boolean('on_sale')) {
+            $query->whereNotNull('compare_price')->where('compare_price', '>', 'price');
         }
 
         $sort = match ($request->query('sort')) {
@@ -69,11 +90,22 @@ class ProductController extends Controller
             return response()->json($query->limit((int) $request->query('limit'))->get());
         }
 
+        $perPage = (int) $request->query('per_page', 15);
+        $page = (int) $request->query('page', 1);
+
         if ($request->filled('page')) {
-            return response()->json($query->paginate((int) $request->query('per_page', 20)));
+            return response()->json($query->paginate($perPage));
         }
 
-        return response()->json($query->get());
+        $products = $query->get();
+
+        return response()->json([
+            'data' => $products,
+            'current_page' => 1,
+            'last_page' => 1,
+            'per_page' => $products->count(),
+            'total' => $products->count(),
+        ]);
     }
 
     public function priceBounds(Request $request): JsonResponse
@@ -117,7 +149,7 @@ class ProductController extends Controller
     {
         $product = Product::where('slug', $slug)
             ->where('is_active', true)
-            ->with('category')
+            ->with(['category', 'activeFlashSale'])
             ->first();
 
         if (! $product) {
@@ -125,5 +157,24 @@ class ProductController extends Controller
         }
 
         return response()->json($product);
+    }
+
+    public function suggestions(Request $request): JsonResponse
+    {
+        $query = (string) $request->query('q', '');
+        $limit = min((int) $request->query('limit', 10), 20);
+
+        $products = Product::query()
+            ->where('is_active', true)
+            ->with('activeFlashSale')
+            ->select(['id', 'name', 'slug', 'sku', 'price', 'images'])
+            ->where(function ($builder) use ($query) {
+                $builder->where('name', 'ilike', "%{$query}%")
+                    ->orWhere('sku', 'ilike', "%{$query}%");
+            })
+            ->limit($limit)
+            ->get();
+
+        return response()->json($products);
     }
 }

@@ -24,6 +24,8 @@ class AdminBlogController extends Controller
             'image_url' => 'sometimes|nullable|string',
             'published_at' => 'sometimes|nullable|date',
             'is_published' => 'sometimes|boolean',
+            'related_product_ids' => 'sometimes|nullable|array',
+            'related_product_ids.*' => 'uuid|exists:products,id',
         ]));
 
         return response()->json($blogPost, 201);
@@ -39,12 +41,14 @@ class AdminBlogController extends Controller
         $blogPost = BlogPost::findOrFail($id);
         $blogPost->update($request->validate([
             'title' => 'sometimes|string',
-            'slug' => 'sometimes|string|unique:blog_posts,slug,' . $id,
+            'slug' => 'sometimes|string|unique:blog_posts,slug,'.$id,
             'excerpt' => 'sometimes|nullable|string',
             'content' => 'sometimes|string',
             'image_url' => 'sometimes|nullable|string',
             'published_at' => 'sometimes|nullable|date',
             'is_published' => 'sometimes|boolean',
+            'related_product_ids' => 'sometimes|nullable|array',
+            'related_product_ids.*' => 'uuid|exists:products,id',
         ]));
 
         return response()->json($blogPost);
@@ -53,6 +57,7 @@ class AdminBlogController extends Controller
     public function destroy(string $id): JsonResponse
     {
         BlogPost::findOrFail($id)->delete();
+
         return response()->json(['message' => 'Blog post deleted.']);
     }
 }

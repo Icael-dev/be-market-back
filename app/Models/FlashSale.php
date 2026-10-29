@@ -11,6 +11,7 @@ class FlashSale extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -31,7 +32,7 @@ class FlashSale extends Model
     protected static function booted(): void
     {
         static::creating(function (FlashSale $sale) {
-            if (!$sale->id) {
+            if (! $sale->id) {
                 $sale->id = (string) Str::uuid();
             }
         });

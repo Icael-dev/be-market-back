@@ -10,7 +10,10 @@ class FAQ extends Model
 {
     use HasFactory;
 
+    protected $table = 'faqs';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -30,7 +33,7 @@ class FAQ extends Model
     protected static function booted(): void
     {
         static::creating(function (FAQ $faq) {
-            if (!$faq->id) {
+            if (! $faq->id) {
                 $faq->id = (string) Str::uuid();
             }
         });

@@ -11,6 +11,7 @@ class Testimonial extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -32,7 +33,7 @@ class Testimonial extends Model
     protected static function booted(): void
     {
         static::creating(function (Testimonial $testimonial) {
-            if (!$testimonial->id) {
+            if (! $testimonial->id) {
                 $testimonial->id = (string) Str::uuid();
             }
         });

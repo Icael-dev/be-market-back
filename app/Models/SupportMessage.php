@@ -11,6 +11,7 @@ class SupportMessage extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -28,7 +29,7 @@ class SupportMessage extends Model
     protected static function booted(): void
     {
         static::creating(function (SupportMessage $message) {
-            if (!$message->id) {
+            if (! $message->id) {
                 $message->id = (string) Str::uuid();
             }
         });

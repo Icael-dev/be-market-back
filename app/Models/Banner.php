@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -11,6 +12,7 @@ class Banner extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -20,7 +22,6 @@ class Banner extends Model
         'image_url',
         'link_url',
         'button_text',
-        'position',
         'is_active',
         'sort_order',
     ];
@@ -33,9 +34,22 @@ class Banner extends Model
     protected static function booted(): void
     {
         static::creating(function (Banner $banner) {
-            if (!$banner->id) {
+            if (! $banner->id) {
                 $banner->id = (string) Str::uuid();
             }
         });
+    }
+
+    protected function imageUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value) {
+                if (is_string($value) && str_starts_with($value, '/storage/products/')) {
+                    return str_replace('/storage/products/', '/api/images/', $value);
+                }
+
+                return $value;
+            },
+        );
     }
 }

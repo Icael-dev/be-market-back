@@ -11,6 +11,7 @@ class Coupon extends Model
     use HasFactory;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -39,9 +40,14 @@ class Coupon extends Model
     protected static function booted(): void
     {
         static::creating(function (Coupon $coupon) {
-            if (!$coupon->id) {
+            if (! $coupon->id) {
                 $coupon->id = (string) Str::uuid();
             }
         });
+    }
+
+    public function usages()
+    {
+        return $this->hasMany(CouponUsage::class);
     }
 }
